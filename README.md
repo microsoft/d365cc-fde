@@ -45,7 +45,7 @@ Our mission is to close the gap between cutting-edge AI capabilities and real-wo
 | What We Do | How We Deliver |
 |------------|----------------|
 | **AI-First Engineering** | Leverage Copilot, GPT models, and Azure AI to automate agent workflows, predict customer intent, and deliver intelligent self-service |
-| **Enterprise Architecture** | Design and deploy multi-region, high-availability contact center solutions for Fortune 500 operations |
+| **Enterprise Architecture** | Design and deploy multi-region, high-availability contact center solutions for the world's most demanding organizations—Fortune 500, federal agencies, healthcare systems, and global enterprises |
 | **Rapid Prototyping** | Transform customer challenges into working solutions in days, not quarters |
 | **Open Source First** | Every solution we build is generalized and shared—elevating the entire ecosystem |
 
