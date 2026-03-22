@@ -3,7 +3,7 @@
 <img src="./assets/d365cc-logo.png" width="80" alt="D365 Contact Center" />
 
 # Dynamics 365 Contact Center
-### Field Engineering Toolkit
+### Forward Deployed Engineering Toolkit
 
 <br />
 
