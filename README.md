@@ -178,14 +178,6 @@ cd d365cc-fde/tools/dialer-helper
 
 ---
 
-This repository includes documentation, practical guidances, and customer-ready presentations. Production-ready solutions are maintained in separate repositories created by our team, and this repository provides links to that code. You can also visit the page [Dynamics 365 Contact Center FDE](https://github.com/orgs/microsoft/teams/dynamics-365-contact-center-fde/repositories)  to explore the repositories created by the team.
-
-## Links on FDE projects repositories
-
-- Country Code Helper (coming soon)
-- AI Assisted Disposition Code (coming soon)
-- Templates for the Real Time Agetns (coming soon)
-
 ## Contributing
 
 We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help makes these tools better for everyone.
