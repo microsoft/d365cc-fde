@@ -4,6 +4,14 @@ We are the Dynamics 365 Contact Center Forward Deployment Engineering team. As p
 
 As we support these engagements, we develop reusable tools, patterns, and implementation assets that help accelerate future deployments and improve product adoption across customers, collected in this repository.
 
+This repository includes documentation, practical guidances, and customer-ready presentations. Production-ready solutions are maintained in separate repositories created by our team, and this repository provides links to that code. You can also visit the page [Dynamics 365 Contact Center FDE](https://github.com/orgs/microsoft/teams/dynamics-365-contact-center-fde/repositories)  to explore the repositories created by the team.
+
+## Links on FDE projects repositories
+
+- Country Code Helper (coming soon)
+- AI Assisted Disposition Code (coming soon)
+- Templates for the Real Time Agetns (coming soon)
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
