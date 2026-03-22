@@ -11,7 +11,7 @@
 
 <br />
 
-**Production-ready tools that make contact center agents more efficient**
+**AI-powered solutions for the next generation of customer service**
 
 <br />
 
@@ -32,22 +32,31 @@
 
 </div>
 
-## The Problem We Solve
+## Forward Deployed Engineering
 
-Contact center agents handle **hundreds of interactions daily**. Every extra click, every unnecessary dropdown scroll, every repeated action adds up to **hours of lost productivity**.
+**Accelerating the future of AI-powered customer service at enterprise scale.**
 
-We build tools that eliminate these friction points.
+The Forward Deployed Engineering team partners directly with the world's largest organizations to reimagine contact center operations through the power of Dynamics 365 Contact Center and Microsoft AI. We don't just implement technology—we engineer transformational outcomes.
+
+Our mission is to close the gap between cutting-edge AI capabilities and real-world customer service operations, delivering production-ready solutions that drive measurable business impact from day one.
 
 <div align="center">
 
-| Metric | Before | After | Impact |
-|--------|--------|-------|--------|
-| Country selection | ~8 seconds | **Instant** | 100% time reduction |
-| Disposition coding | 15-45 seconds | **2-6 seconds** | 75-90% time reduction |
-| Classification accuracy | 65-80% | **90%+** | Reliable analytics |
-| Agent wrap-up time | Manual search | **One-click confirm** | 20,000+ hours saved/year |
+| What We Do | How We Deliver |
+|------------|----------------|
+| **AI-First Engineering** | Leverage Copilot, GPT models, and Azure AI to automate agent workflows, predict customer intent, and deliver intelligent self-service |
+| **Enterprise Architecture** | Design and deploy multi-region, high-availability contact center solutions for Fortune 500 operations |
+| **Rapid Prototyping** | Transform customer challenges into working solutions in days, not quarters |
+| **Open Source First** | Every solution we build is generalized and shared—elevating the entire ecosystem |
 
 </div>
+
+**Our Engineering Philosophy:**
+
+- **Embedded with customers** — We operate on-site alongside contact center teams, not from conference rooms
+- **Ship code, not slide decks** — We measure success in deployed solutions, not consulting hours
+- **AI augments humans** — We build tools that make agents superhuman, not replace them
+- **Scale by default** — Every solution handles millions of interactions from the start
 
 ---
 
