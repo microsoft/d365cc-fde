@@ -56,7 +56,7 @@ Our mission is to close the gap between cutting-edge AI capabilities and real-wo
 - **Embedded with customers** — We operate on-site alongside contact center teams, not from conference rooms
 - **Ship code, not slide decks** — We measure success in deployed solutions, not consulting hours
 - **AI augments humans** — We build tools that make agents superhuman, not replace them
-- **Scale by default** — Every solution handles millions of interactions from the start
+- **Production-ready from day one** — Solutions are architected to scale with customer growth
 
 ---
 
