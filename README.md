@@ -2,8 +2,6 @@
 
 We are the Dynamics 365 Contact Center Forward Deployment Engineering team. As part of the product group, we work directly with strategic customers to design, build, and deliver successful Dynamics 365 Contact Center implementations.
 
-As the maintainer of this project, please make a few updates:
-
 As we support these engagements, we develop reusable tools, patterns, and implementation assets that help accelerate future deployments and improve product adoption across customers, collected in this repository.
 
 ## Contributing
