@@ -1,4 +1,4 @@
-# Dyanmics 365 Contact Center Forward Deplyment Engineering
+# Dynamics 365 Contact Center Forward Deplyment Engineering
 
 We are the Dynamics 365 Contact Center Forward Deployment Engineering team. As part of the product group, we work directly with strategic customers to design, build, and deliver successful Dynamics 365 Contact Center implementations.
 
