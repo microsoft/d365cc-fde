@@ -57,8 +57,6 @@ No deep technical design required.
 template-name/
 README.md              # Documentation and customization guide
 template.json          # Parameterized template ({{VARIABLES}})
-**variables.example.json # Example values to fill in** Remove this file?   
-
 ____________________________________________________________________
 You usually only need to edit the **template.json** file.
 
