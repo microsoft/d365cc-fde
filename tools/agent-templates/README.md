@@ -2,182 +2,200 @@
 
 <img src="../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
 
-*Crafted with care for contact center excellence*
+*Designed to make modern contact centers simple and reliable*
 
 </div>
 
 # Agent Templates
 
-Production-tested templates for D365 Contact Center real-time voice agents.
+Ready‑to‑use templates that help you quickly set up **voice agents** in **D365 Contact Center**.
+
+These templates are already tested in real customer deployments, so you don’t have to start from scratch.
 
 ---
 
-## What Are These?
+## What Is This?
 
-These are **parameterized configuration templates** for real-time voice agents (Speech-to-Speech). Each template represents a battle-tested pattern extracted from successful enterprise deployments.
+Think of these templates as **pre-built blueprints** for how your phone agent behaves.
 
-**You provide the variables. We provide the proven structure.**
+Each template defines:
+- How the agent talks to callers
+- What questions it asks
+- How it understands customer requests
+- What actions it can take (like routing calls or booking appointments)
+
+**You just fill in your business details.**  
+**The structure and best practices are already taken care of.**
 
 ---
 
 ## Available Templates
 
-| Industry | Template | Use Case |
-|----------|----------|----------|
-| [Retail](./retail/) | [Store Routing](./retail/store-routing/) | Multi-department store call routing |
-| [Professional Services](./professional-services/) | [Appointment Management](./professional-services/appointment-management/) | Customer identification and scheduling |
+| Industry | Template | What It Helps With |
+|--------|---------|--------------------|
+| Retail | Store Routing | Routes calls to the right store department |
+| Professional Services | Appointment Management | Identifies customers and schedules appointments |
 
 ---
 
-## How Templates Work
+## How These Templates Help You
 
-Each template contains:
+Instead of designing a voice agent from scratch, you:
 
-```
+1. Pick a template that matches your scenario  
+2. Enter your company‑specific details (like company name or business rules)  
+3. Upload it into D365 Contact Center  
+
+That’s it.
+
+No deep technical design required.
+
+---
+
+## What’s Inside a Template?
+
 template-name/
-├── README.md              # Documentation and customization guide
-├── template.json          # Parameterized template ({{VARIABLES}})
-└── variables.example.json # Example values to fill in
-```
+README.md              # Documentation and customization guide
+template.json          # Parameterized template ({{VARIABLES}})
+**variables.example.json # Example values to fill in** Remove this file?   
 
-### Step 1: Choose a Template
+____________________________________________________________________
+You usually only need to edit the **template.json** file.
 
-Browse by industry or use case above.
+---
 
-### Step 2: Copy and Configure
+## How to Use a Template (Simple Version)
 
-```bash
-# Copy the template
-cp template.json my-agent.json
+### Step 1: Pick a Template
 
-# Copy example variables
-cp variables.example.json my-variables.json
+Choose the template that best matches your business use case.
 
-# Edit with your values
-code my-variables.json
-```
+---
 
-### Step 3: Apply Variables
+### Step 2: Fill in Your Details
 
-Replace `{{VARIABLE}}` placeholders with your values. You can use:
+Open the **template.json** file and replace the placeholder values shown like `{{...}}`.
 
-- Manual find/replace
-- `envsubst` (Linux/Mac)
-- Custom script (see template READMEs)
+For example:
+- `{{COMPANY_NAME}}`
+- `{{Department names}}`
+- `{{Business hours}}`
+- `{{Tool names}}`
 
-### Step 4: Validate
+You don’t need to understand the underlying code — just replace the example text with your own details.
 
-```bash
-npx ajv validate -s _schema/realtime-agent.schema.json -d my-agent.json
-```
+---
+
+### Step 3: Apply Your Details
+
+The template automatically uses your values wherever they are needed.
+
+This helps ensure:
+- The agent speaks consistently
+- Business rules remain aligned
+- Nothing important is missed
+
+---
+
+### Step 4: Validate (Optional but Recommended)
+
+A validation step is available to check that nothing is missing before deployment.  
+This helps catch typos or incomplete settings early.
+
+---
 
 ### Step 5: Deploy
 
-Import the configured JSON into your D365 Contact Center environment.
+Copy and paste the completed **JSON** content into your **Copilot Studio agent instructions**, then publish your agent.
+
+Your voice agent is now ready.
 
 ---
 
-## Template Anatomy
+## What the Agent Is Made Of (Conceptually)
 
-### Persona & Objective
+You don’t need to edit these sections directly, but understanding them can be helpful.
 
-```json
-{
-  "persona": {
-    "description": "You are a professional, friendly IVR assistant for {{COMPANY_NAME}}..."
-  },
-  "objective": "Identify customer intent and route calls..."
-}
-```
+### Agent Personality & Goal
 
-### Scope Guardrails
-
-```json
-{
-  "scope_guardrails": {
-    "allowed_topics": ["..."],
-    "out_of_scope_behavior": "..."
-  }
-}
-```
-
-### Intent Handling
-
-```json
-{
-  "intent_confidence_model": {
-    "high_confidence": "...",
-    "medium_confidence": "...",
-    "low_confidence": "..."
-  }
-}
-```
-
-### Tool Integration
-
-```json
-{
-  "tool_usage": {
-    "{{YOUR_TOOL_NAME}}": {
-      "usage": "...",
-      "inputs": ["..."],
-      "output_handling": ["..."]
-    }
-  }
-}
-```
+Defines:
+- How the agent sounds (friendly, professional, calm)
+- What the agent’s main responsibility is (for example, routing calls correctly)
 
 ---
 
-## Schema Validation
+### Guardrails (What the Agent Can and Can’t Do)
 
-All templates conform to the [realtime-agent.schema.json](./_schema/realtime-agent.schema.json) schema.
+Clearly defines:
+- Which topics the agent is allowed to handle
+- What the agent should do when something is out of scope (such as escalating to a human agent)
 
-Validate your configured agent:
+---
 
-```bash
-# Install ajv-cli
-npm install -g ajv-cli
+### How the Agent Handles Confidence
 
-# Validate
-ajv validate -s _schema/realtime-agent.schema.json -d your-agent.json
-```
+The agent behaves differently based on how confident it is about the caller’s intent:
+- **High confidence** → acts immediately
+- **Medium confidence** → confirms with the caller
+- **Low confidence** → asks follow-up questions or routes to an agent
+
+---
+
+### Tool Usage
+
+Templates define **when and how** the agent interacts with business systems, such as:
+- Looking up customer information
+- Checking availability
+- Booking appointments
+
+This ensures consistent and predictable behavior.
+
+---
+
+## Quality Checks
+
+All templates follow a standard structure to ensure:
+- Reliability
+- Predictable behavior
+- Easy maintenance
+
+Optional validation tools are available for teams that want extra assurance before deploying.
 
 ---
 
 ## Best Practices
 
-### Do
+### Recommended
 
-- Test each tool independently before full agent deployment
-- Start with example variables, then customize
-- Validate against schema before deployment
-- Monitor analytics after go-live
+- Start with the example values and change only what you need  
+- Test common scenarios before going live  
+- Monitor call outcomes after deployment  
 
-### Don't
+### Avoid
 
-- Fabricate tool responses or IDs
-- Skip datetime validation rules
-- Deploy without testing escalation paths
-- Ignore schema validation errors
+- Guessing IDs or system values  
+- Skipping confirmation or fallback scenarios  
+- Deploying without testing escalation paths  
 
 ---
 
-## Contributing Templates
+## Want to Contribute?
 
-Have a production-tested pattern? We'd love to include it.
+If you have a template that works well in production, we welcome contributions.
 
-1. Parameterize all customer-specific values
-2. Remove any identifying information
-3. Include comprehensive README
-4. Add example variables
-5. Submit a PR
+Please:
+1. Replace customer-specific data with placeholders  
+2. Remove any sensitive information  
+3. Add clear documentation  
+4. Include example values  
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+See `CONTRIBUTING.md` for details.
 
 ---
 
-## Questions?
+## Need Help?
 
-- [Open a discussion](https://github.com/microsoft/d365cc-fde/discussions)
-- [Report an issue](https://github.com/microsoft/d365cc-fde/issues)
+- Ask questions in Discussions  
+- Report issues on GitHub  
+
+We’re here to help you succeed.
