@@ -33,8 +33,8 @@ Each template defines:
 
 | Industry | Template | What It Helps With |
 |--------|---------|--------------------|
-| Retail | Store Routing | Routes calls to the right store department |
-| Professional Services | Appointment Management | Identifies customers and schedules appointments |
+| [Retail](https://github.com/microsoft/d365cc-fde/tree/main/tools/agent-templates/retail) | [Store Routing](https://github.com/microsoft/d365cc-fde/tree/main/tools/agent-templates/retail/store-routing) | Routes calls to the right store department |
+| [Professional Services](https://github.com/microsoft/d365cc-fde/tree/main/tools/agent-templates/professional-services) | [Appointment Management](https://github.com/microsoft/d365cc-fde/tree/main/tools/agent-templates/professional-services/appointment-management) | Identifies customers and schedules appointments |
 
 ---
 
