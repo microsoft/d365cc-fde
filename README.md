@@ -126,30 +126,6 @@ We build tools based on real problems we encounter in the field. If you have an 
 
 ---
 
-## Agent Templates
-
-Production-tested templates for real-time voice agents (Speech-to-Speech). Each template is a parameterized configuration you can customize for your organization.
-
-<div align="center">
-
-| Industry | Template | Use Case |
-|----------|----------|----------|
-| [Retail](./tools/agent-templates/retail/) | [Store Routing](./tools/agent-templates/retail/store-routing/) | Multi-department call routing |
-| [Professional Services](./tools/agent-templates/professional-services/) | [Appointment Management](./tools/agent-templates/professional-services/appointment-management/) | Customer identification and scheduling |
-
-</div>
-
-**What's included:**
-
-- Parameterized JSON templates with `{{VARIABLE}}` placeholders
-- Example variable files for quick customization  
-- JSON Schema for validation
-- Comprehensive documentation
-
-[**Browse Templates →**](./tools/agent-templates/)
-
----
-
 ## Quick Start
 
 ### Option 1: Install a Tool (Recommended)
