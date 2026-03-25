@@ -99,7 +99,7 @@ Stop scrolling through 200+ countries for every external transfer. Set your pref
 
 **AI-powered disposition code recommendations at conversation end**
 
-Stop scrolling through 200+ disposition codes. AI analyzes the conversation summary and recommends the right codes instantly. Agents confirm with one click.
+Streamline wrap-up decisions. AI analyzes the Copilot conversation summary, surfaces the most relevant disposition codes with confidence scores, and agents confirm or adjust with one click.
 
 [![Version](https://img.shields.io/badge/version-1.0.0.2-blue)](#)
 [![Platform](https://img.shields.io/badge/Power%20Platform-Solution-742774)](#)
