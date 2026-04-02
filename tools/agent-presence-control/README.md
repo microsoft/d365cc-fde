@@ -61,49 +61,51 @@ Supervisors can monitor their entire agent population at a glance, filter by que
 
 ## 2. Screenshots
 
-> **See the Agent Presence Control in action** — Real-time monitoring, queue filtering, presence history, and more.
+> **Click any thumbnail to view full-size**
 
-<div align="center">
-
-### Main Dashboard View
-
-<img src="./assets/AgentPresenceHub01.png" alt="Agent Presence Control - Main Dashboard" width="800" />
-
-*Real-time agent presence grid with summary bar, search, and filtering capabilities*
-
----
-
-### Status Summary & Filtering
-
-<img src="./assets/AgentPresenceHub02.png" alt="Status Summary and Queue Filtering" width="800" />
-
-*Click any status in the summary bar to filter agents instantly. Filter by queue membership for targeted monitoring.*
-
----
-
-### Expanded Agent Details
-
-<img src="./assets/AgentPresenceHub03.png" alt="Expanded Agent Details with History" width="800" />
-
-*Expand any agent row to see detailed presence info and 24-hour history timeline*
-
----
-
-### Presence History Modal
-
-<img src="./assets/AgentPresenceHub04.png" alt="7-Day Presence History Modal" width="800" />
-
-*Full 7-day presence history with day-by-day breakdown, duration tracking, and timeline visualization*
-
----
-
-### Supervisor Presence Modification
-
-<img src="./assets/AgentPresenceHub05.png" alt="Modify Agent Presence" width="800" />
-
-*Authorized supervisors can change agent presence status with a single click*
-
-</div>
+<table>
+<tr>
+<td align="center" width="33%">
+<a href="./assets/AgentPresenceHub01.png">
+<img src="./assets/AgentPresenceHub01.png" width="250" alt="Main Dashboard" />
+</a>
+<br /><b>Main Dashboard</b>
+<br /><sub>Real-time presence grid</sub>
+</td>
+<td align="center" width="33%">
+<a href="./assets/AgentPresenceHub02.png">
+<img src="./assets/AgentPresenceHub02.png" width="250" alt="Filtering" />
+</a>
+<br /><b>Status Filtering</b>
+<br /><sub>Queue & presence filters</sub>
+</td>
+<td align="center" width="33%">
+<a href="./assets/AgentPresenceHub03.png">
+<img src="./assets/AgentPresenceHub03.png" width="250" alt="Agent Details" />
+</a>
+<br /><b>Agent Details</b>
+<br /><sub>Expanded row with history</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="33%">
+<a href="./assets/AgentPresenceHub04.png">
+<img src="./assets/AgentPresenceHub04.png" width="250" alt="History Modal" />
+</a>
+<br /><b>History Modal</b>
+<br /><sub>7-day presence timeline</sub>
+</td>
+<td align="center" width="33%">
+<a href="./assets/AgentPresenceHub05.png">
+<img src="./assets/AgentPresenceHub05.png" width="250" alt="Modify Presence" />
+</a>
+<br /><b>Modify Presence</b>
+<br /><sub>Supervisor controls</sub>
+</td>
+<td align="center" width="33%">
+</td>
+</tr>
+</table>
 
 ---
 
