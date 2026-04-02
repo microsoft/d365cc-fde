@@ -111,6 +111,30 @@ Streamline wrap-up decisions. AI analyzes the Copilot conversation summary, surf
 
 </td>
 </tr>
+<tr>
+<td width="120" align="center">
+<br />
+<img src="./assets/d365cc-logo.png" width="60" alt="Agent Presence Control" />
+<br /><br />
+</td>
+<td>
+
+### [Agent Presence Control](./tools/agent-presence-control/)
+
+**Real-time agent presence monitoring for contact center supervisors**
+
+See all agents at a glance with Teams-style presence icons. Filter by queue, view presence history, and modify agent status—all from a single PCF control.
+
+[![Version](https://img.shields.io/badge/version-1.0-blue)](#)
+[![Platform](https://img.shields.io/badge/Power%20Platform-PCF%20Control-742774)](#)
+[![React](https://img.shields.io/badge/React-16.14-61DAFB?logo=react&logoColor=white)](#)
+
+**Features:** Real-time grid · Queue filtering · Presence history · Supervisor edit · Virtual scroll (30K+ agents)
+
+[**Deploy Now →**](./tools/agent-presence-control/#10-deployment-guide)
+
+</td>
+</tr>
 </table>
 
 <details>
