@@ -287,6 +287,33 @@ AgentPresenceControl/
                     └─────────────────────────────────────────────────┘
 ```
 
+### Source Code
+
+The full PCF control source code is available for customization and contribution:
+
+| Resource | Location |
+|----------|----------|
+| **Source Code (ZIP)** | [`SourceCode/AgentPresenceControl.zip`](./SourceCode/AgentPresenceControl.zip) |
+| **Compiled Solution** | [`AgentPresenceControl.zip`](./AgentPresenceControl.zip) |
+| **Extracted Solution** | [`solution/`](./solution/) |
+
+**To build from source:**
+
+```bash
+# Extract source code
+unzip SourceCode/AgentPresenceControl.zip -d AgentPresenceControl
+
+# Install dependencies
+cd AgentPresenceControl
+npm install
+
+# Build the control
+npm run build
+
+# Package as solution
+pac pcf push --publisher-prefix acc
+```
+
 ---
 
 ## 8. Data Sources
