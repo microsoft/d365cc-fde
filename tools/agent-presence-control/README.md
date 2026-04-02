@@ -514,7 +514,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 | Name | Role |
 |------|------|
-| Karthik Mallaya | Author |
+| Vinoth Balasubramanian | Author / Creator |
 
 ---
 
