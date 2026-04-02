@@ -30,23 +30,24 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Business Problem](#2-business-problem)
-3. [Solution Overview](#3-solution-overview)
-4. [Business Impact & ROI](#4-business-impact--roi)
-5. [Features](#5-features)
-6. [Architecture](#6-architecture)
-7. [Data Sources](#7-data-sources)
-8. [Security & Permissions](#8-security--permissions)
-9. [Prerequisites](#9-prerequisites)
-10. [Deployment Guide](#10-deployment-guide)
-11. [Configuration](#11-configuration)
-12. [Usage Guide](#12-usage-guide)
-13. [Performance](#13-performance)
-14. [Known Limitations](#14-known-limitations)
-15. [Troubleshooting](#15-troubleshooting)
-16. [Version History](#16-version-history)
-17. [Contributors](#17-contributors)
-18. [License](#18-license)
+2. [Screenshots](#2-screenshots)
+3. [Business Problem](#3-business-problem)
+4. [Solution Overview](#4-solution-overview)
+5. [Business Impact & ROI](#5-business-impact--roi)
+6. [Features](#6-features)
+7. [Architecture](#7-architecture)
+8. [Data Sources](#8-data-sources)
+9. [Security & Permissions](#9-security--permissions)
+10. [Prerequisites](#10-prerequisites)
+11. [Deployment Guide](#11-deployment-guide)
+12. [Configuration](#12-configuration)
+13. [Usage Guide](#13-usage-guide)
+14. [Performance](#14-performance)
+15. [Known Limitations](#15-known-limitations)
+16. [Troubleshooting](#16-troubleshooting)
+17. [Version History](#17-version-history)
+18. [Contributors](#18-contributors)
+19. [License](#19-license)
 
 ---
 
@@ -58,7 +59,55 @@ Supervisors can monitor their entire agent population at a glance, filter by que
 
 ---
 
-## 2. Business Problem
+## 2. Screenshots
+
+> **See the Agent Presence Control in action** — Real-time monitoring, queue filtering, presence history, and more.
+
+<div align="center">
+
+### Main Dashboard View
+
+<img src="./assets/AgentPresenceHub01.png" alt="Agent Presence Control - Main Dashboard" width="800" />
+
+*Real-time agent presence grid with summary bar, search, and filtering capabilities*
+
+---
+
+### Status Summary & Filtering
+
+<img src="./assets/AgentPresenceHub02.png" alt="Status Summary and Queue Filtering" width="800" />
+
+*Click any status in the summary bar to filter agents instantly. Filter by queue membership for targeted monitoring.*
+
+---
+
+### Expanded Agent Details
+
+<img src="./assets/AgentPresenceHub03.png" alt="Expanded Agent Details with History" width="800" />
+
+*Expand any agent row to see detailed presence info and 24-hour history timeline*
+
+---
+
+### Presence History Modal
+
+<img src="./assets/AgentPresenceHub04.png" alt="7-Day Presence History Modal" width="800" />
+
+*Full 7-day presence history with day-by-day breakdown, duration tracking, and timeline visualization*
+
+---
+
+### Supervisor Presence Modification
+
+<img src="./assets/AgentPresenceHub05.png" alt="Modify Agent Presence" width="800" />
+
+*Authorized supervisors can change agent presence status with a single click*
+
+</div>
+
+---
+
+## 3. Business Problem
 
 ### Current State
 
@@ -89,7 +138,7 @@ Contact center supervisors need to monitor agent availability in real-time to:
 
 ---
 
-## 3. Solution Overview
+## 4. Solution Overview
 
 ### How It Works
 
@@ -142,7 +191,7 @@ Contact center supervisors need to monitor agent availability in real-time to:
 
 ---
 
-## 4. Business Impact & ROI
+## 5. Business Impact & ROI
 
 | Benefit | Impact |
 |---------|--------|
@@ -162,7 +211,7 @@ Contact center supervisors need to monitor agent availability in real-time to:
 
 ---
 
-## 5. Features
+## 6. Features
 
 ### Core Features
 
@@ -194,7 +243,7 @@ Contact center supervisors need to monitor agent availability in real-time to:
 
 ---
 
-## 6. Architecture
+## 7. Architecture
 
 ### Technology Stack
 
@@ -238,7 +287,7 @@ AgentPresenceControl/
 
 ---
 
-## 7. Data Sources
+## 8. Data Sources
 
 ### Dataverse Tables Used
 
@@ -277,7 +326,7 @@ Content-Type: application/json
 
 ---
 
-## 8. Security & Permissions
+## 9. Security & Permissions
 
 ### Read Access
 
@@ -308,7 +357,7 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ---
 
-## 9. Prerequisites
+## 10. Prerequisites
 
 ### Platform Requirements
 
@@ -330,7 +379,7 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ---
 
-## 10. Deployment Guide
+## 11. Deployment Guide
 
 ### Step 1: Import Solution
 
@@ -407,7 +456,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 11. Configuration
+## 12. Configuration
 
 ### Control Properties
 
@@ -427,7 +476,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 12. Usage Guide
+## 13. Usage Guide
 
 ### Viewing Agent Presence
 
@@ -470,7 +519,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 13. Performance
+## 14. Performance
 
 ### Scalability
 
@@ -493,7 +542,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 14. Known Limitations
+## 15. Known Limitations
 
 | Limitation | Workaround |
 |------------|------------|
@@ -504,7 +553,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 ### Grid Shows No Agents
 
@@ -535,7 +584,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 16. Version History
+## 17. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
@@ -543,7 +592,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 17. Contributors
+## 18. Contributors
 
 | Name | Role |
 |------|------|
@@ -551,7 +600,7 @@ For presence modification, assign **Omnichannel Administrator** role.
 
 ---
 
-## 18. License
+## 19. License
 
 This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for details.
 
