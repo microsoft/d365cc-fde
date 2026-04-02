@@ -332,34 +332,51 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ## 10. Deployment Guide
 
-### Step 1: Download Solution
+### Step 1: Import Solution
 
-Download `AgentPresenceControl.zip` from this repository.
+1. Navigate to **Power Apps** or **Dynamics 365 Admin Center**
+2. Go to **Solutions** → **Import Solution**
+3. Upload `AgentPresenceControlSolution.zip` from this repository
+4. Review dependencies and resolve if needed
+5. Complete import and click **Publish All Customizations**
 
-### Step 2: Import Solution
+### Step 2: Create Productivity Pane Tool
 
-1. Navigate to **Power Apps** → **Solutions**
-2. Click **Import solution**
-3. Select `AgentPresenceControl.zip`
-4. Click **Next** → **Import**
-5. Wait for import to complete
+1. Go to **Customer Service Admin Center**
+2. Navigate to **Workspaces** → **Productivity** → **Productivity pane**
+3. Click **New Tool**
 
-### Step 3: Add Control to Dashboard/Form
+**Configuration:**
 
-#### Option A: Add to Model-Driven App Dashboard
+| Setting | Value |
+|---------|-------|
+| **Name** | Human Agents |
+| **Unique Name** | new_Agents |
+| **Type** | Control |
+| **Control Name** | `acc_AgentCC.AgentPresenceControl` |
+| **Global** | Yes (recommended) |
 
-1. Open the **App Designer** for your app (e.g., Customer Service workspace)
-2. Add a new **Custom Page** or **Dashboard**
-3. Add a **PCF component** and select `acc_AgentCC.AgentPresenceControl`
-4. Save and publish
+<div align="center">
+<img src="./assets/deployment_1.png" alt="Create Productivity Pane Tool" width="700" />
 
-#### Option B: Add to Form (Full-Page Control)
+*Creating the productivity pane tool with control configuration*
+</div>
 
-1. Open the form editor for an entity (e.g., create a dedicated dashboard entity)
-2. Add a **Custom Control** to a section
-3. Select `acc_AgentCC.AgentPresenceControl`
-4. Configure the control to fill available width/height
-5. Save and publish
+### Step 3: Enable Tool in Experience Profile
+
+1. Go to **Workspaces** → **Experience Profiles**
+2. Open the relevant profile (e.g., default supervisor profile)
+3. Navigate to **Productivity Pane** section
+4. Click **Add Tool**
+5. Select **Human Agents**
+6. Enable the toggle
+7. **Save** and **Publish**
+
+<div align="center">
+<img src="./assets/deployment_2.png" alt="Add Tool to Experience Profile" width="700" />
+
+*Adding the tool to an experience profile*
+</div>
 
 ### Step 4: Grant Permissions
 
@@ -371,6 +388,22 @@ Ensure supervisors have at least **read** access to:
 - `queuemembership`
 
 For presence modification, assign **Omnichannel Administrator** role.
+
+### Validation Checklist
+
+| Step | Verification |
+|------|--------------|
+| ✅ Solution imported | No errors during import |
+| ✅ Tool created | Control name is `acc_AgentCC.AgentPresenceControl` |
+| ✅ Tool added to profile | Tool appears in experience profile |
+| ✅ Profile assigned to users | Supervisors have the profile |
+| ✅ Tool visible | Tool appears in productivity pane |
+
+<div align="center">
+<img src="./assets/deployment_3.png" alt="Agent Presence Control in Productivity Pane" width="700" />
+
+*Agent Presence Control visible in the productivity pane*
+</div>
 
 ---
 
