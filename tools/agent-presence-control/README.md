@@ -291,28 +291,93 @@ AgentPresenceControl/
 
 The full PCF control source code is available for customization and contribution:
 
-| Resource | Location |
-|----------|----------|
-| **Source Code (ZIP)** | [`SourceCode/AgentPresenceControl.zip`](./SourceCode/AgentPresenceControl.zip) |
-| **Compiled Solution** | [`AgentPresenceControl.zip`](./AgentPresenceControl.zip) |
-| **Extracted Solution** | [`solution/`](./solution/) |
+| Resource | Description |
+|----------|-------------|
+| [`SourceCode/AgentPresenceControl.zip`](./SourceCode/AgentPresenceControl.zip) | Source code (TypeScript, configs) |
+| [`AgentPresenceControl.zip`](./AgentPresenceControl.zip) | Pre-built solution (ready to import) |
+| [`solution/`](./solution/) | Extracted solution files |
 
-**To build from source:**
+### Building from Source
 
-```bash
-# Extract source code
-unzip SourceCode/AgentPresenceControl.zip -d AgentPresenceControl
+#### Prerequisites
 
-# Install dependencies
+| Tool | Version | Installation |
+|------|---------|--------------|
+| **Node.js** | 18.x or later | [nodejs.org](https://nodejs.org/) |
+| **npm** | 9.x or later | Included with Node.js |
+| **Power Platform CLI** | Latest | `npm install -g pac` or [VS Code extension](https://marketplace.visualstudio.com/items?itemName=microsoft-IsvExpTools.powerplatform-vscode) |
+
+#### Step-by-Step Build
+
+```powershell
+# 1. Extract source code
+Expand-Archive -Path "SourceCode/AgentPresenceControl.zip" -DestinationPath "." -Force
 cd AgentPresenceControl
+
+# 2. Install dependencies (restores node_modules from package.json)
 npm install
 
-# Build the control
+# 3. Build the control (compiles TypeScript → JavaScript)
 npm run build
 
-# Package as solution
+# 4. Test locally in harness (optional)
+npm start watch
+# Opens browser at https://localhost:8181 with test harness
+```
+
+#### Deploying to Dataverse
+
+**Option A: Push directly to environment**
+
+```powershell
+# Authenticate to your environment
+pac auth create --url https://yourorg.crm.dynamics.com
+
+# Push the control (creates/updates solution automatically)
 pac pcf push --publisher-prefix acc
 ```
+
+**Option B: Package as solution file**
+
+```powershell
+# Create solution project
+pac solution init --publisher-name AgentCC --publisher-prefix acc
+
+# Add the PCF project reference
+pac solution add-reference --path ./AgentPresenceControl
+
+# Build the solution (creates .zip in bin/Debug or bin/Release)
+dotnet build
+
+# Import the solution via Power Apps maker portal
+```
+
+#### Project Structure
+
+```
+AgentPresenceControl/
+├── AgentPresenceControl/           # PCF control source
+│   ├── index.ts                    # Entry point (init, updateView, destroy)
+│   ├── AgentPresenceGrid.tsx       # Main React component (1600+ lines)
+│   ├── PresenceIcon.tsx            # Teams-style SVG icons
+│   └── ControlManifest.Input.xml   # Control manifest (properties, features)
+├── package.json                    # npm dependencies
+├── package-lock.json               # Dependency lock file
+├── tsconfig.json                   # TypeScript configuration
+├── pcfconfig.json                  # PCF configuration
+├── AgentPresenceControl.pcfproj    # MSBuild project file
+└── eslint.config.mjs               # ESLint configuration
+```
+
+#### Customization Tips
+
+| Customization | File | Section |
+|---------------|------|---------|
+| Polling interval | `AgentPresenceGrid.tsx` | `POLL_INTERVAL_MS` constant |
+| Row height | `AgentPresenceGrid.tsx` | `ROW_HEIGHT` constant |
+| Presence colors | `AgentPresenceGrid.tsx` | `PRESENCE_COLORS` object |
+| Status icons | `PresenceIcon.tsx` | `renderPresenceSvg()` function |
+| OData query | `AgentPresenceGrid.tsx` | `ODATA_OPTIONS` constant |
 
 ---
 
