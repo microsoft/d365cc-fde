@@ -473,11 +473,11 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ---
 
-## 11. Deployment Guide
+## 11. Deploy uing the Solution Template
 
 ### Step 1: Import Solution
 
-1. Navigate to **Power Apps** or **Dynamics 365 Admin Center**
+1. Navigate to **Power Apps** or **Copilot Service admin center**
 2. Go to **Solutions** → **Import Solution**
 3. Upload `AgentPresenceControlSolution.zip` from this repository
 4. Review dependencies and resolve if needed
@@ -485,8 +485,8 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ### Step 2: Create Productivity Pane Tool
 
-1. Go to **Customer Service Admin Center**
-2. Navigate to **Workspaces** → **Productivity** → **Productivity pane**
+1. Go to **Copilot Service admin center**
+2. Navigate to **Support experience** → **Productivity** → **Productivity tools**
 3. Click **New Tool**
 
 **Configuration:**
