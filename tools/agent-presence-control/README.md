@@ -477,7 +477,7 @@ The control checks `systemuser.systemuserroles_association` on load and conditio
 
 ### Step 1: Import Solution
 
-1. Navigate to **Power Apps** or **Copilot Service admin center**
+1. Navigate to **Power Apps Maker Portal (https://make.powerapps.com/) and select the correct environment** 
 2. Go to **Solutions** → **Import Solution**
 3. Upload `AgentPresenceControlSolution.zip` from this repository
 4. Review dependencies and resolve if needed
