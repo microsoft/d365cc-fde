@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="AgentCC" constructor="AgentPresenceControl" version="0.0.1"
+           display-name-key="AgentPresenceControl"
+           description-key="AgentPresenceControl description"
+           control-type="virtual">
+
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!-- Optional bound property; not required so the control can be placed
+         on a form without needing to bind to a specific column. -->
+    <property name="sampleProperty"
+              display-name-key="Property_Display_Key"
+              description-key="Property_Desc_Key"
+              of-type="SingleLine.Text"
+              usage="bound"
+              required="false" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="16.14.0" />
+    </resources>
+
+    <feature-usage>
+      <!-- WebAPI is required to query msdyn_agentstatus and msdyn_presence -->
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+
+  </control>
+</manifest>
+
