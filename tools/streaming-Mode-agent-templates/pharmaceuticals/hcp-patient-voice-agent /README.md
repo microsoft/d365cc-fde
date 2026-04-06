@@ -1,6 +1,6 @@
 <div align="center">
-
-<img src="../../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
+<img src="../../../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
+  </BR>
 
 *Crafted with care for contact center excellence*
 
