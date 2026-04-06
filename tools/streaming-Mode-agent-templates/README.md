@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/d365cc-logo.png" width="80" alt="D365 Contact Center" />
+<img src="../../../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
 
 # Dynamics 365 Contact Center
 ### Forward Deployed Engineering Toolkit
