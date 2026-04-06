@@ -187,8 +187,6 @@ Please:
 3. Add clear documentation  
 4. Include example values  
 
-See `CONTRIBUTING.md` for details.
-
 ---
 
 ## Need Help?
