@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/microsoft/d365cc-fde/agent-templates/child-agent.schema.json",
+  "title": "D365 Contact Center Child Agent Template",
+  "description": "Schema for validating a child agent in a multi-agent real-time voice setup. Child agents handle a single intent (e.g. order status, drug pricing, refill) and operate within the same conversation thread as the parent orchestrator.",
+  "type": "object",
+  "required": ["agent_name", "persona", "task", "context_rules", "tools", "conversation_states"],
+  "additionalProperties": false,
+  "properties": {
+
+    "agent_name": {
+      "type": "string",
+      "description": "Configuration name of this child agent as registered in D365. Must match the parent orchestrator's child_configs entry exactly."
+    },
+
+    "persona": {
+      "type": "object",
+      "required": ["description"],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Role description and voice characteristics for this child agent"
+        }
+      }
+    },
+
+    "task": {
+      "type": "string",
+      "description": "Single-sentence description of what this child agent is responsible for"
+    },
+
+    "context_rules": {
+      "type": "object",
+      "description": "Behavioral and session rules governing this child agent",
+      "required": ["voice_first", "keep_session_alive", "conversation_rules"],
+      "properties": {
+        "requires_verified_member": {
+          "type": "boolean",
+          "description": "Whether this agent requires a verified member context from the parent before operating"
+        },
+        "use_latest_values_only": {
+          "type": "boolean"
+        },
+        "latest_user_correction_wins": {
+          "type": "boolean"
+        },
+        "member_context_reuse": {
+          "type": "boolean"
+        },
+        "single_tool_call_per_unique_request": {
+          "type": "boolean"
+        },
+        "member_id_reuse": {
+          "type": "boolean"
+        },
+        "voice_first": {
+          "type": "boolean",
+          "description": "Must be true — this agent operates in a voice-first context"
+        },
+        "keep_session_alive": {
+          "type": "boolean"
+        },
+        "session_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "intent_mapping": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "lookup_priority": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "payment_input_policy": {
+          "type": "object",
+          "description": "DTMF-only payment collection rules. Required when the child handles payment.",
+          "properties": {
+            "payment_fields_dtmf_only": { "type": "boolean" },
+            "allowed_input_source": { "type": "string", "enum": ["dtmf", "speech", "both"] },
+            "dtmf_terminator_key": { "type": "string" },
+            "accept_finalized_dtmf": { "type": "boolean" },
+            "dont_reask_pound_after_finalized": { "type": "boolean" },
+            "reject_speech_for_payment_fields": { "type": "boolean" },
+            "do_not_parse_spoken_digits_for_payment": { "type": "boolean" }
+          }
+        },
+        "conversation_rules": {
+          "type": "object",
+          "description": "Fine-grained conversation behavior flags",
+          "properties": {
+            "single_ack_per_turn":                       { "type": "boolean" },
+            "single_path_narration":                     { "type": "boolean" },
+            "combine_clarifications_when_possible":      { "type": "boolean" },
+            "answer_follow_up_from_latest_response":     { "type": "boolean" },
+            "hide_internal_process":                     { "type": "boolean" },
+            "never_expose_states_or_transitions":        { "type": "boolean" },
+            "never_mention_tool_or_agent_calls":         { "type": "boolean" },
+            "avoid_monotone_confirmations":              { "type": "boolean" },
+            "no_wake_up_needed_after_user_input":        { "type": "boolean" },
+            "continue_in_same_turn_after_tool_response": { "type": "boolean" },
+            "keep_conversation_open_after_results":      { "type": "boolean" },
+            "never_ask_to_end_the_call":                 { "type": "boolean" },
+            "never_use_call_closing_language":           { "type": "boolean" },
+            "latency_cue_max_per_wait_cycle":            { "type": "integer", "minimum": 0 },
+            "latency_cue_min_interval_seconds":          { "type": "integer", "minimum": 0 },
+            "prefer_silence_while_waiting_after_cue":    { "type": "boolean" },
+            "ignore_low_confidence_background_fragments":{ "type": "boolean" },
+            "on_noisy_audio_use_repair_prompt":          { "type": "boolean" },
+            "never_mention_transfer_or_agent_handoff":   { "type": "boolean" },
+            "intent_switch_is_seamless":                 { "type": "boolean" },
+            "reuse_verified_member_context_across_intents": { "type": "boolean" },
+            "never_mention_mock_or_test_data":           { "type": "boolean" }
+          }
+        }
+      }
+    },
+
+    "voice_experience": {
+      "type": "object",
+      "required": ["tone"],
+      "properties": {
+        "tone": {
+          "type": "string",
+          "description": "Desired vocal tone (e.g. 'Warm, calm, concise.')"
+        },
+        "utterance_style": {
+          "type": "object",
+          "properties": {
+            "keep_sentences_short":      { "type": "boolean" },
+            "max_sentences_before_pause":{ "type": "integer", "minimum": 1 },
+            "acknowledgment_policy":     { "type": "string" },
+            "liveness_cues": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "human_like_flow": {
+          "type": "object",
+          "properties": {
+            "speak_result_first":        { "type": "boolean" },
+            "offer_follow_up_question":  { "type": "boolean" },
+            "avoid_repeating_context":   { "type": "boolean" },
+            "avoid_repeating_known_context": { "type": "boolean" }
+          }
+        },
+        "audio_resilience": {
+          "type": "object",
+          "properties": {
+            "speakerphone_mode": { "type": "string" },
+            "overlap_rule":      { "type": "string" },
+            "repair_prompts": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "tools": {
+      "type": "array",
+      "description": "List of tool or flow names this child agent is permitted to call. Use empty array [] for mock/demo agents.",
+      "items": { "type": "string" }
+    },
+
+    "_tools_note": {
+      "type": "string",
+      "description": "Optional note about tool configuration for this agent"
+    },
+
+    "mock_data_rules": {
+      "type": "object",
+      "description": "Mock data used for demos or testing only. Must be removed or disabled in production.",
+      "properties": {
+        "_comment": { "type": "string" },
+        "medication_catalog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name":     { "type": "string" },
+              "strength": { "type": "string" },
+              "form":     { "type": "string" }
+            }
+          }
+        },
+        "days_supply_options": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "price_rules": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "min": { "type": ["number", "string"] },
+              "max": { "type": ["number", "string"] }
+            }
+          }
+        },
+        "saved_card_last4_range": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        }
+      }
+    },
+
+    "conversation_states": {
+      "type": "array",
+      "description": "Ordered list of states this child agent moves through when handling its intent",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "actions", "transitions"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique state identifier, recommended format: '<number>_<name>'"
+          },
+          "actions": {
+            "type": "array",
+            "description": "Ordered behavioral instructions for this state",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "transitions": {
+            "type": "array",
+            "description": "Conditions that move the conversation to another state. Empty array is valid for terminal states.",
+            "items": {
+              "type": "object",
+              "required": ["next_step", "condition"],
+              "additionalProperties": false,
+              "properties": {
+                "next_step": {
+                  "type": "string",
+                  "description": "ID of the state to transition to"
+                },
+                "condition": {
+                  "type": "string",
+                  "description": "Human-readable condition that triggers this transition"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
