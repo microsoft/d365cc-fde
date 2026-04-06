@@ -1,0 +1,32 @@
+{
+  "_comment": "Example variable values for the pharmacy voice agent s2s template. Replace every placeholder with your organization's actual values before deploying.",
+
+  "_section_branding": "--- Branding & Voice ---",
+  "COMPANY_NAME": "Contoso Pharmacy",
+  "VOICE_STYLE": "warm, professional pharmacy voice",
+
+  "_section_agent_names": "--- Agent Config Names (must match agent names configured in your D365 environment) ---",
+  "PARENT_AGENT_NAME": "Pharmacy Voice Orchestrator",
+  "CHILD_ORDER_STATUS_CONFIG": "Order Status",
+  "CHILD_DRUG_PRICING_CONFIG": "Drug Pricing",
+  "CHILD_REFILL_CONFIG": "Refill",
+
+  "_section_tools": "--- Tool / Flow Names (replace with your actual tool or Power Automate flow names in D365) ---",
+  "MEMBER_AUTH_TOOL": "MemberAuthChecker",
+  "ORDER_STATUS_TOOL": "OrderStatusTool",
+  "DRUG_VERSION_TOOL": "DrugVersionTool",
+  "DRUG_PRICE_TOOL": "DrugPriceAPI",
+  "REFILL_TOOL": "RefillTool",
+
+  "_section_mock": "--- Mock / Demo Data (used only for testing; remove in production) ---",
+  "MOCK_MED_1_NAME": "Atorvastatin",
+  "MOCK_MED_1_STRENGTH": "20 mg",
+  "MOCK_MED_2_NAME": "Metformin",
+  "MOCK_MED_2_STRENGTH": "500 mg",
+  "MOCK_MED_3_NAME": "Lisinopril",
+  "MOCK_MED_3_STRENGTH": "10 mg",
+  "MOCK_30DAY_PRICE_MIN": 12,
+  "MOCK_30DAY_PRICE_MAX": 55,
+  "MOCK_90DAY_PRICE_MIN": 28,
+  "MOCK_90DAY_PRICE_MAX": 135
+}
