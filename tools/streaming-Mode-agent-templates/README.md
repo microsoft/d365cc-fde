@@ -67,8 +67,8 @@ Production-tested templates for real-time voice agents (Speech-to-Speech). Each 
 
 | Industry | Template | Use Case |
 |----------|----------|----------|
-| [Retail](./tools/streaming-Mode-agent-templates/retail/) | [Store Routing](./tools/streaming-Mode-agent-templates/retail/store-routing/) | Multi-department call routing |
-| [Professional Services](./tools/streaming-Mode-agent-templates/professional-services/) | [Appointment Management](./tools/streaming-Mode-agent-templates/professional-services/appointment-management/) | Customer identification and scheduling |
+| Retail | [Store Routing](./tools/streaming-Mode-agent-templates/retail/store-routing/) | Multi-department call routing |
+| Professional Services| [Appointment Management](./tools/streaming-Mode-agent-templates/professional-services/appointment-management/) | Customer identification and scheduling |
 
 </div>
 
