@@ -19,6 +19,8 @@ Real-time voice agent template for routing callers to store departments in multi
 - Store hours inquiries
 - General information and operator fallback
 
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
 ---
 
 ## What's Included
