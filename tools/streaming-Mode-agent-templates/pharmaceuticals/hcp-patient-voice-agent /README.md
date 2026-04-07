@@ -22,6 +22,9 @@ Real-time voice agent template for pharmaceutical support, drug information, and
 - Manufacturer information for non-Pfizer drugs
 - Case creation and SMS confirmation
 
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
+
 ---
 
 ## What's Included
