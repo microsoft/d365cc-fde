@@ -11,6 +11,9 @@ These files help teams:
 - validate configs before deployment
 - maintain both editable and trimmed versions
 
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
+
 ## Suggested Repo Structure
 
 ```text
