@@ -18,6 +18,9 @@ Real-time speech-to-speech voice agent template for pharmacy member services. Co
 - Health plan pharmacy benefit lines
 - Any pharmacy requiring member-authenticated voice self-service
 
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
+
 ---
 
 ## What's Included
