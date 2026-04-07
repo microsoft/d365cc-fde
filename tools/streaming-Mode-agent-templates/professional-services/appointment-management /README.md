@@ -19,6 +19,9 @@ Real-time voice agent template for customer identification and appointment sched
 - Healthcare appointments
 - Any service requiring scheduled consultations
 
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
+
 ---
 
 ## What's Included
