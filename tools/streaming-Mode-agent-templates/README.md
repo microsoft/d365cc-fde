@@ -26,6 +26,7 @@ Each template defines:
 
 **You just fill in your business details.**  
 **The structure and best practices are already taken care of.**
+
 **These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
 
 
