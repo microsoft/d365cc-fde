@@ -1,64 +1,36 @@
-<div align="center">
+iv align="center">
 
-<img src="../../assets/d365cc-logo.png" width="80" alt="D365 Contact Center" />
+<img src="../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
 
-# Dynamics 365 Contact Center
-### Forward Deployed Engineering Toolkit
-
-<br />
-
-*Crafted with care for contact center excellence*
-
-<br />
-
-**AI-powered solutions for the next generation of customer service**
-
-<br />
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![GitHub issues](https://img.shields.io/github/issues/microsoft/d365cc-fde)](https://github.com/microsoft/d365cc-fde/issues)
-[![GitHub stars](https://img.shields.io/github/stars/microsoft/d365cc-fde)](https://github.com/microsoft/d365cc-fde/stargazers)
-[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![Edge Compatible](https://img.shields.io/badge/Edge-Compatible-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com)
-
-<br />
-
-[**Get Started**](#quick-start) · [**Tools**](#available-tools) · [**Agent Templates**](#agent-templates) · [**Contributing**](#contributing)
-
-<br />
-
----
+*Designed to make modern contact centers simple and reliable*
 
 </div>
 
-## Forward Deployed Engineering
+# Agent Templates
 
-**Accelerating the future of AI-powered customer service at enterprise scale.**
+Ready‑to‑use templates that help you quickly set up **voice agents** in **D365 Contact Center**.
 
-The Forward Deployed Engineering team partners directly with the world's largest organizations to reimagine contact center operations through the power of Dynamics 365 Contact Center and Microsoft AI. We don't just implement technology—we engineer transformational outcomes.
-
-Our mission is to close the gap between cutting-edge AI capabilities and real-world customer service operations, delivering production-ready solutions that drive measurable business impact from day one.
-
-<div align="center">
-
-| What We Do | How We Deliver |
-|------------|----------------|
-| **AI-First Engineering** | Leverage Copilot, GPT models, and Azure AI to automate agent workflows, predict customer intent, and deliver intelligent self-service |
-| **Enterprise Architecture** | Design and deploy multi-region, high-availability contact center solutions for the world's most demanding organizations—Fortune 500, federal agencies, healthcare systems, and global enterprises |
-| **Rapid Prototyping** | Transform customer challenges into working solutions in days, not quarters |
-| **Open Source First** | Every solution we build is generalized and shared—elevating the entire ecosystem |
-
-</div>
-
-**Our Engineering Philosophy:**
-
-- **Embedded with customers** — We operate on-site alongside contact center teams, not from conference rooms
-- **Ship code, not slide decks** — We measure success in deployed solutions, not consulting hours
-- **AI augments humans** — We build tools that make agents superhuman, not replace them
-- **Scale by default** — Every solution handles millions of interactions from the start
+These templates are already tested in real customer deployments, so you don’t have to start from scratch.
 
 ---
+
+## What Is This?
+
+Think of these templates as **pre-built blueprints** for how your phone agent behaves.
+
+Each template defines:
+- How the agent talks to callers
+- What questions it asks
+- How it understands customer requests
+- What actions it can take (like routing calls or booking appointments)
+
+**You just fill in your business details.**  
+**The structure and best practices are already taken care of.**
+**These templates are provided as starting guidelines to help you kick‑start development. They must be reviewed, updated, and tailored to align with your organization’s specific use cases, policies, and requirements.**
+
+
+---
+
 ## Streaming Mode Agent Templates
 
 Production-tested templates for real-time voice agents (Speech-to-Speech). Each template is a parameterized configuration you can customize for your organization.
