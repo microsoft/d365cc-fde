@@ -1,4 +1,4 @@
-iv align="center">
+<div align="center">
 
 <img src="../../assets/d365cc-logo.png" width="60" alt="D365 Contact Center" />
 
