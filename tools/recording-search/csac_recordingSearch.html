@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<!--
+  CSAC Recording Search
+  Version:    1.0.0
+  Build Date: 2026-03-11
+  Description: Search voice recordings and conversations in Dynamics 365 Contact Center.
+               Filter by date/time, agent (any participant via sessions), caller phone
+               number, or associated contact record.
+               Deployed as a web resource surfaced as an Application Tab in CSW.
+  Changelog:  See CHANGELOG.md in project root
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Recording Search</title>
+  <style>
+    /* ─── Reset & Variables ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:        #0078D4;
+      --blue-dark:   #005A9E;
+      --blue-light:  #EFF6FC;
+      --green:       #107C10;
+      --green-bg:    #DFF6DD;
+      --red:         #D13438;
+      --red-bg:      #FDE7E9;
+      --orange:      #C7500E;
+      --orange-bg:   #FFF4CE;
+      --purple:      #881798;
+      --purple-bg:   #F4EBFF;
+      --gray:        #797775;
+      --gray-bg:     #F3F2F1;
+      --gray-line:   #EDEBE9;
+      --text:        #201F1E;
+      --text-muted:  #605E5C;
+      --white:       #FFFFFF;
+      --shadow:      0 2px 6px rgba(0,0,0,.08);
+      --radius:      4px;
+      --font:        'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      background: var(--gray-bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── Update Banner ─────────────────────────────────────────────────────── */
+    .update-banner {
+      background: var(--blue);
+      color: var(--white);
+      text-align: center;
+      padding: 7px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .update-banner:hover { background: var(--blue-dark); }
+
+    /* ─── Header ────────────────────────────────────────────────────────────── */
+    .header {
+      background: var(--blue-dark);
+      color: var(--white);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-left  { display: flex; align-items: center; gap: 12px; }
+    .header-title { font-size: 16px; font-weight: 600; letter-spacing: .2px; }
+    .version-badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.9);
+    }
+    .header-right {
+      font-size: 12px;
+      color: rgba(255,255,255,.65);
+    }
+
+    /* ─── Search Panel ──────────────────────────────────────────────────────── */
+    .search-panel {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-line);
+      padding: 14px 20px;
+      flex-shrink: 0;
+    }
+    .search-panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 10px;
+    }
+    .form-rows { display: flex; flex-direction: column; gap: 8px; }
+    .form-row  { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 150px;
+    }
+    .form-group.narrow { flex: 0 0 auto; min-width: 130px; }
+    .form-group.actions {
+      flex: 0 0 auto;
+      min-width: auto;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="datetime-local"],
+    .date-option  input[type="datetime-local"] {
+      height: 32px;
+      border: 1px solid #C8C6C4;
+      border-radius: var(--radius);
+      padding: 0 10px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--white);
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .date-option  input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px var(--blue);
+    }
+    .form-group input::placeholder { color: #B0ADAB; }
+
+    /* ─── Shared select style ───────────────────────────────────────────────── */
+    .form-group select,
+    .date-option  select {
+      height: 32px;
+      border: 1px solid #C8C6C4;
+      border-radius: var(--radius);
+      padding: 0 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-group select:focus,
+    .date-option  select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px var(--blue);
+    }
+    select:disabled,
+    input:disabled { opacity: 0.4; cursor: not-allowed; background: var(--gray-bg) !important; }
+
+    /* ─── Date mode block ───────────────────────────────────────────────────── */
+    .date-block {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+    }
+    .date-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: var(--radius);
+      border: 1px solid #C8C6C4;
+      background: var(--gray-bg);
+      cursor: pointer;
+      transition: background .15s, border-color .15s, box-shadow .15s;
+      flex-wrap: wrap;
+    }
+    .date-option.active {
+      background: #EFF6FC;
+      border-color: var(--blue);
+      box-shadow: inset 3px 0 0 var(--blue);
+      cursor: default;
+    }
+    .date-option.inactive { opacity: 0.5; }
+    .date-option-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      white-space: nowrap;
+      color: var(--text-muted);
+    }
+    .date-option.active .date-option-label { color: var(--blue-dark); }
+    .date-or {
+      font-size: 11px;
+      font-style: italic;
+      color: var(--text-muted);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    /* ─── Duration range ────────────────────────────────────────────────────── */
+    .dur-range { display: flex; align-items: center; gap: 5px; }
+    .dur-range input[type="number"] {
+      width: 66px;
+      height: 32px;
+      border: 1px solid #C8C6C4;
+      border-radius: var(--radius);
+      padding: 0 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .dur-range input[type="number"]:focus { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+    .dur-sep { font-size: 12px; color: var(--text-muted); }
+
+    /* ─── Filter toggles (rec-only, transferred) ────────────────────────────── */
+    .filter-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .filter-toggle input[type="checkbox"] { accent-color: var(--blue); width: 14px; height: 14px; }
+
+    /* ─── More filters collapsible ──────────────────────────────────────────── */
+    .more-filters-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .more-filters-btn {
+      background: none;
+      border: none;
+      font-size: 12px;
+      font-family: var(--font);
+      font-weight: 600;
+      color: var(--blue);
+      cursor: pointer;
+      padding: 2px 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .more-filters-btn:hover { color: var(--blue-dark); }
+    .more-filters-chevron { font-size: 10px; display: inline-block; transition: transform .2s; }
+    .more-filters-badge {
+      background: var(--blue);
+      color: var(--white);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .more-filters-panel {
+      padding-top: 8px;
+      border-top: 1px dashed var(--gray-line);
+      margin-top: 4px;
+    }
+
+    .search-hint {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    /* Recordings-only toggle */
+    .rec-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .rec-toggle input[type="checkbox"] { accent-color: var(--blue); width: 14px; height: 14px; }
+
+    /* ─── Buttons ───────────────────────────────────────────────────────────── */
+    .btn {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: var(--font);
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .15s, border-color .15s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary  { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .btn-primary:hover  { background: var(--blue-dark); border-color: var(--blue-dark); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-secondary { background: var(--white); color: var(--text); border-color: #C8C6C4; }
+    .btn-secondary:hover { background: var(--gray-bg); }
+    .btn-sm {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 400;
+    }
+    .btn-sm:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--blue);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: var(--font);
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .btn-link:hover { color: var(--blue-dark); }
+
+    /* ─── Results Section ───────────────────────────────────────────────────── */
+    .results-section {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ─── Results Container ────────────────────────────────────────────────── */
+    .state-results {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .state-results[hidden] { display: none; }
+
+    /* ─── State Boxes ───────────────────────────────────────────────────────── */
+    .state-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      gap: 12px;
+      color: var(--text-muted);
+    }
+    .state-box[hidden] { display: none !important; }
+    .state-icon { font-size: 38px; opacity: .5; }
+    .state-box p { font-size: 14px; max-width: 420px; line-height: 1.55; }
+    .state-box .state-sub { font-size: 12px; color: #A19F9D; margin-top: 2px; }
+
+    /* ─── Spinner ───────────────────────────────────────────────────────────── */
+    .spinner {
+      width: 30px; height: 30px;
+      border: 3px solid #EDEBE9;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-steps { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── Results Bar ───────────────────────────────────────────────────────── */
+    .results-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 20px;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-line);
+      flex-shrink: 0;
+    }
+    .results-summary { font-size: 13px; color: var(--text-muted); }
+    .results-summary strong { color: var(--text); }
+    .results-bar-right { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+
+    /* ─── Table ─────────────────────────────────────────────────────────────── */
+    .table-wrapper { overflow: auto; flex: 1; }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .results-table th {
+      background: #FAFAFA;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 8px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--gray-line);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .results-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--gray-line);
+      vertical-align: middle;
+    }
+    .results-table tbody tr.result-row { cursor: pointer; }
+    .results-table tbody tr.result-row:hover { background: #F3F9FE; }
+    .results-table tbody tr.result-row.expanded { background: #EFF6FC; }
+    .results-table tbody tr.detail-row td { padding: 0; background: #F8FBFF; border-bottom: 2px solid var(--blue-light); }
+    .results-table thead th.sortable { cursor: pointer; user-select: none; }
+    .results-table thead th.sortable:hover { background: #EFF6FC; }
+    .results-table thead th.sort-active { color: var(--blue); }
+    .sort-arrow { margin-left: 4px; font-size: 10px; opacity: 0.5; }
+    .sort-active .sort-arrow { opacity: 1; }
+
+    /* Cell styling */
+    .cell-dt     { white-space: nowrap; }
+    .cell-dt .dt-date { font-weight: 600; font-size: 13px; }
+    .cell-dt .dt-time { color: var(--text-muted); font-size: 12px; }
+    .cell-dur    { font-variant-numeric: tabular-nums; color: var(--text-muted); white-space: nowrap; }
+    .cell-agent  { font-weight: 500; white-space: nowrap; }
+    .cell-phone  { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px; white-space: nowrap; }
+    .cell-contact .trunc {
+      max-width: 160px;
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
+    .cell-actions { white-space: nowrap; }
+    .cell-rec     { text-align: center; }
+
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-active   { background: var(--green-bg);  color: var(--green); }
+    .badge-resolved { background: var(--gray-bg);   color: var(--gray); }
+    .badge-waiting  { background: var(--orange-bg); color: var(--orange); }
+    .badge-voice    { background: var(--purple-bg); color: var(--purple); }
+    .badge-chat     { background: var(--blue-light); color: var(--blue-dark); }
+    .badge-channel  { background: var(--blue-light); color: var(--blue-dark); }
+
+    /* Recording button */
+    .rec-btn {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 13px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid #A9D3A6;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background .15s;
+    }
+    .rec-btn:hover { background: #C7EFCA; }
+    .rec-none { font-size: 12px; color: #A19F9D; }
+
+    /* ─── Detail Panel ──────────────────────────────────────────────────────── */
+    .detail-panel {
+      padding: 14px 20px 16px;
+      border-top: 1px solid var(--blue-light);
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 10px 20px;
+      margin-bottom: 12px;
+    }
+    .detail-field label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .detail-field span { font-size: 13px; color: var(--text); word-break: break-all; }
+
+    .detail-recordings { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .recording-card {
+      background: var(--white);
+      border: 1px solid var(--gray-line);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+    .recording-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .recording-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .recording-card-meta { font-size: 11px; color: var(--text-muted); }
+    .recording-card audio { width: 100%; height: 36px; display: block; }
+    .recording-card .rec-fallback {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 4px 0;
+    }
+    .recording-card .rec-link { font-size: 12px; margin-top: 6px; display: block; }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    /* ─── Pagination Footer ─────────────────────────────────────────────────── */
+    .pagination-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--white);
+      border-top: 1px solid var(--gray-line);
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* ─── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .results-table th.col-contact,
+      .results-table td.cell-contact { display: none; }
+    }
+    @media (max-width: 700px) {
+      .results-table th.col-channel,
+      .results-table td.cell-channel { display: none; }
+      .form-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Update Banner ──────────────────────────────────────────────────────── -->
+  <div id="updateBanner" class="update-banner" hidden onclick="location.reload()">
+    ↺ &nbsp;New version available — click to reload
+  </div>
+
+  <!-- ─── Header ─────────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <!-- microphone icon -->
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <rect x="7" y="1" width="6" height="10" rx="3" fill="rgba(255,255,255,.85)"/>
+        <path d="M4 9a6 6 0 0012 0" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <line x1="10" y1="15" x2="10" y2="18" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="7" y1="18" x2="13" y2="18" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="header-title">Recording Search</span>
+      <span class="version-badge" id="versionBadge">v1.0.0</span>
+    </div>
+    <div class="header-right" id="lastSearchTime"></div>
+  </header>
+
+  <!-- ─── Search Panel ────────────────────────────────────────────────────────── -->
+  <section class="search-panel">
+    <div class="search-panel-title">Search Filters</div>
+    <div class="form-rows">
+
+      <!-- ── Row 1: Date + Agent ──────────────────────────────────────────── -->
+      <div class="form-row">
+        <div class="date-block">
+          <div class="date-option active" id="presetOpt" onclick="setDateMode('preset')">
+            <span class="date-option-label">Quick select</span>
+            <select id="datePreset">
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="7d" selected>Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="thismonth">This month</option>
+              <option value="lastmonth">Last month</option>
+            </select>
+          </div>
+          <span class="date-or">or</span>
+          <div class="date-option inactive" id="customOpt" onclick="setDateMode('custom')">
+            <span class="date-option-label">Custom range</span>
+            <input type="datetime-local" id="dateFrom" disabled />
+            <span class="dur-sep">–</span>
+            <input type="datetime-local" id="dateTo" disabled />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="agentSearch">Agent <span style="font-weight:400;font-size:10px;letter-spacing:0">(any participant)</span></label>
+          <input type="text" id="agentSearch" placeholder="e.g. Jane Smith" autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- ── Row 2: Phone + Contact + Actions ─────────────────────────────── -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phoneSearch">Caller Phone</label>
+          <input type="text" id="phoneSearch" placeholder="e.g. +1 555 123 4567" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="contactSearch">Contact</label>
+          <input type="text" id="contactSearch" placeholder="Contact name..." autocomplete="off" />
+        </div>
+        <div class="form-group actions">
+          <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.8"/>
+              <line x1="10.5" y1="10.5" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Search
+          </button>
+          <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+        </div>
+      </div>
+
+      <!-- ── More filters toggle ───────────────────────────────────────────── -->
+      <div class="more-filters-bar">
+        <button class="more-filters-btn" id="moreFiltersBtn" onclick="toggleMoreFilters()">
+          <span class="more-filters-chevron" id="moreFiltersChevron">▸</span>
+          More filters
+          <span class="more-filters-badge" id="moreFiltersBadge" hidden></span>
+        </button>
+      </div>
+
+      <!-- ── More filters panel (collapsed by default) ─────────────────────── -->
+      <div class="more-filters-panel" id="moreFiltersPanel" hidden>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="queueFilter">Queue</label>
+            <select id="queueFilter" onchange="updateMoreFiltersLabel()"><option value="">All queues</option></select>
+          </div>
+          <div class="form-group">
+            <label for="workstreamFilter">Workstream</label>
+            <select id="workstreamFilter" onchange="updateMoreFiltersLabel()"><option value="">All workstreams</option></select>
+          </div>
+          <div class="form-group narrow">
+            <label for="directionFilter">Direction</label>
+            <select id="directionFilter" onchange="updateMoreFiltersLabel()">
+              <option value="">All</option>
+              <option value="false">Inbound</option>
+              <option value="true">Outbound</option>
+            </select>
+          </div>
+          <div class="form-group narrow">
+            <label for="sentimentFilter">Sentiment</label>
+            <select id="sentimentFilter" onchange="updateMoreFiltersLabel()">
+              <option value="">All</option>
+              <option value="pos">Positive</option>
+              <option value="10">Neutral</option>
+              <option value="neg">Negative</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group narrow">
+            <label>Duration (min)</label>
+            <div class="dur-range">
+              <input type="number" id="durMin" placeholder="Min" min="0" step="1" onchange="updateMoreFiltersLabel()" />
+              <span class="dur-sep">–</span>
+              <input type="number" id="durMax" placeholder="Max" min="0" step="1" onchange="updateMoreFiltersLabel()" />
+            </div>
+          </div>
+          <div class="form-group actions">
+            <label class="filter-toggle" title="Only show results that have at least one recording">
+              <input type="checkbox" id="recOnly" onchange="applyRecFilter(); updateMoreFiltersLabel();" />
+              Recordings only
+            </label>
+            <label class="filter-toggle" title="Only show conversations that were transferred at least once">
+              <input type="checkbox" id="transferOnly" onchange="applyRecFilter(); updateMoreFiltersLabel();" />
+              Transferred
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="search-hint" id="searchHint"></div>
+  </section>
+
+  <!-- ─── Results Section ─────────────────────────────────────────────────────── -->
+  <section class="results-section">
+
+    <!-- Initial State -->
+    <div id="stateInitial" class="state-box">
+      <div class="state-icon">🎙</div>
+      <p>Enter search criteria above and click <strong>Search</strong> to find recordings and conversations.</p>
+      <p class="state-sub">Filter by date range, agent, caller number, or contact — combine filters freely.</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="stateLoading" class="state-box" hidden>
+      <div class="spinner"></div>
+      <p>Searching…</p>
+      <div class="loading-steps" id="loadingSteps"></div>
+    </div>
+
+    <!-- Error State -->
+    <div id="stateError" class="state-box" hidden>
+      <div class="state-icon">⚠️</div>
+      <p id="errorMsg">An error occurred.</p>
+      <p class="state-sub">Check the browser console for details, or verify entity names in CONFIG.</p>
+    </div>
+
+    <!-- No Results State -->
+    <div id="stateNoResults" class="state-box" hidden>
+      <div class="state-icon">🔍</div>
+      <p id="noResultsMsg">No conversations found matching your criteria.</p>
+      <p class="state-sub">Try broadening your date range or checking the spelling of agent / contact names.</p>
+    </div>
+
+    <!-- Results (header + table + footer) -->
+    <div id="stateResults" class="state-results" hidden>
+
+      <div class="results-bar">
+        <span class="results-summary" id="resultSummary"></span>
+        <div class="results-bar-right">
+          <span id="pageInfo"></span>
+          <button class="btn btn-sm btn-secondary" id="prevBtn"  onclick="prevPage()" disabled>‹ Prev</button>
+          <button class="btn btn-sm btn-secondary" id="nextBtn"  onclick="nextPage()" disabled>Next ›</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="sortable" onclick="sortBy('createdon')">Date / Time<span class="sort-arrow"></span></th>
+              <th class="sortable" onclick="sortBy('duration')">Duration<span class="sort-arrow"></span></th>
+              <th class="sortable" onclick="sortBy('agent')">Agent<span class="sort-arrow"></span></th>
+              <th class="sortable" onclick="sortBy('phone')">Caller Number<span class="sort-arrow"></span></th>
+              <th class="sortable col-contact" onclick="sortBy('contact')">Contact<span class="sort-arrow"></span></th>
+              <th class="sortable col-channel" onclick="sortBy('channel')">Channel<span class="sort-arrow"></span></th>
+              <th class="sortable col-rec" onclick="sortBy('recording')">Recording<span class="sort-arrow"></span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination-footer">
+        <button class="btn btn-sm btn-secondary" id="prevBtn2" onclick="prevPage()" disabled>‹ Prev</button>
+        <span id="pageInfo2"></span>
+        <button class="btn btn-sm btn-secondary" id="nextBtn2" onclick="nextPage()" disabled>Next ›</button>
+      </div>
+
+    </div>
+  </section>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CONFIG
+ * Update entity/field names to match your Dynamics 365 environment.
+ * Use scripts/inspect.js (from csac_tab) to dump field metadata.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  version:   '1.4.1',
+  buildDate: '2026-04-29',
+  apiBase:   '/api/data/v9.2',
+  pageSize:  50,
+
+  entities: {
+    conversation: {
+      set:         'msdyn_ocliveworkitems',
+      pk:          'activityid',
+      subject:     'subject',
+      createdon:   'createdon',
+      // Duration in minutes (standard Activity field). VERIFY: may be msdyn_activeduration in seconds
+      duration:    'actualdurationminutes',
+      channel:     'msdyn_channel',
+      statecode:   'statecode',
+      statereason: 'msdyn_statereason',
+      // Phone number of the incoming caller. NOT PRESENT in this org — set to '' to disable.
+      // VERIFY: may be msdyn_calleridnumber, msdyn_customerphoneno, or msdyn_phonenumber
+      callerPhone: '',
+      isOutbound:  'msdyn_isoutbound',
+      // Navigation: ownerid → systemuser (agent)
+      agentNav:      'ownerid',
+      // Additional fields (for $select, filtering, and display)
+      durationSec:   'msdyn_conversationhandletimeinseconds',
+      queue:         '_msdyn_cdsqueueid_value',
+      workstream:    '_msdyn_liveworkstreamid_value',
+      sentiment:     'msdyn_customersentimentlabel',
+      transferCount: 'msdyn_transfercount',
+    },
+
+    // Phone call engagement context — one record per voice conversation, holds ANI
+    phonecallctx: {
+      set:        'msdyn_ocphonecallengagementctxes',
+      convLink:   '_msdyn_liveworkitemid_value',
+      fromPhone:  'msdyn_fromphone',    // ANI — caller's number
+      callerName: 'msdyn_callername',
+    },
+
+    recording: {
+      set:       'msdyn_ocrecordings',
+      pk:        'msdyn_ocrecordingid',
+      name:      'msdyn_name',
+      // This environment has no start/end/duration fields — use createdon as fallback
+      startTime: 'createdon',
+      endTime:   '',
+      duration:  '',
+      // Recording file URI — msdyn_mediauri in this environment
+      uri:       'msdyn_mediauri',
+      // Lookup to conversation
+      convLink:  '_msdyn_liveworkitemid_value',
+    },
+
+    session: {
+      // msdyn_ocsessions: one row per agent per conversation segment
+      set:      'msdyn_ocsessions',
+      ownerLink: '_ownerid_value',
+      convLink:  '_msdyn_liveworkitemid_value',
+    },
+  },
+
+  // Human-readable labels for msdyn_channel option set values
+  channelMap: {
+    192350000: 'Chat',
+    192350001: 'Voice',
+    192350002: 'Facebook',
+    192350003: 'SMS',
+    192350004: 'Twitter / X',
+    192350006: 'Teams',
+    192350007: 'WhatsApp',
+    192350010: 'Custom',
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * STATE
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const state = {
+  allResults:  [],   // all conversations from last search
+  recMap:      {},   // conversationId → recording[]
+  phoneMap:    {},   // conversationId → ANI string (from msdyn_ocphonecallengagementctx)
+  filtered:    [],   // allResults filtered by recOnly toggle
+  page:        0,
+  searching:   false,
+  sort:        { col: 'createdon', dir: 'desc' },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * UI HELPERS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function showState(name) {
+  const states = ['Initial', 'Loading', 'Error', 'NoResults', 'Results'];
+  states.forEach(s => {
+    const el = document.getElementById(`state${s}`);
+    if (el) el.hidden = (s !== name);
+  });
+}
+
+function setStep(msg) {
+  const el = document.getElementById('loadingSteps');
+  if (el) el.textContent = msg;
+}
+
+function setError(msg) {
+  document.getElementById('errorMsg').textContent = msg;
+  showState('Error');
+}
+
+function setNoResults(msg) {
+  document.getElementById('noResultsMsg').textContent = msg;
+  showState('NoResults');
+}
+
+function setHint(msg, isError) {
+  const el = document.getElementById('searchHint');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--red)' : 'var(--text-muted)';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FORMAT HELPERS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function fmtDateTime(iso) {
+  if (!iso) return { date: '—', time: '' };
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' }),
+    time: d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }),
+  };
+}
+
+function fmtDurationMin(minutes) {
+  if (minutes == null || minutes === '') return '—';
+  const m = Math.floor(Number(minutes));
+  const s = Math.round((Number(minutes) - m) * 60);
+  if (isNaN(m)) return '—';
+  if (m === 0 && s === 0) return '—';
+  if (m === 0) return `${s}s`;
+  if (s === 0) return `${m}m`;
+  return `${m}m ${s}s`;
+}
+
+function fmtDurationSec(seconds) {
+  if (seconds == null) return '—';
+  const total = Number(seconds);
+  if (isNaN(total) || total === 0) return '—';
+  // Auto-detect milliseconds (>10000 assumed ms)
+  const sec = total > 10000 ? Math.round(total / 1000) : Math.round(total);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m === 0) return `${s}s`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function channelLabel(raw, formatted) {
+  if (formatted) return formatted;
+  return CONFIG.channelMap[raw] || (raw != null ? String(raw) : '—');
+}
+
+function channelClass(raw) {
+  if (raw === 192350001) return 'badge-voice';
+  if (raw === 192350000) return 'badge-chat';
+  return 'badge-channel';
+}
+
+function stateLabel(code) {
+  return { 0: 'Active', 1: 'Resolved', 2: 'Waiting' }[code] ?? '—';
+}
+function stateClass(code) {
+  return { 0: 'badge-active', 1: 'badge-resolved', 2: 'badge-waiting' }[code] ?? 'badge-waiting';
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function oesc(s) {
+  // Escape single quotes for OData string literals
+  return String(s || '').replace(/'/g, "''");
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * API FETCH
+ * Passthrough auth — the browser's Dynamics session cookie is used automatically.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function apiFetch(path) {
+  const resp = await fetch(path, {
+    headers: {
+      'OData-MaxVersion':  '4.0',
+      'OData-Version':     '4.0',
+      'Accept':            'application/json',
+      'Prefer':            'odata.include-annotations="*"',
+    },
+  });
+  if (!resp.ok) {
+    let msg = `HTTP ${resp.status}`;
+    try { const j = await resp.json(); msg = j?.error?.message || msg; } catch {}
+    throw new Error(msg);
+  }
+  return resp.json();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LOOKUP: AGENTS
+ * Returns systemuser records matching the name (partial, case-insensitive).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function lookupAgents(name) {
+  const filter = `contains(fullname,'${oesc(name)}') and isdisabled eq false`;
+  const url = `${CONFIG.apiBase}/systemusers?$filter=${encodeURIComponent(filter)}&$select=systemuserid,fullname&$top=10`;
+  const r = await apiFetch(url);
+  return r.value || [];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LOOKUP: CONTACTS
+ * Returns contact records matching the name.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function lookupContacts(name) {
+  const filter = `contains(fullname,'${oesc(name)}') and statecode eq 0`;
+  const url = `${CONFIG.apiBase}/contacts?$filter=${encodeURIComponent(filter)}&$select=contactid,fullname,telephone1&$top=10`;
+  const r = await apiFetch(url);
+  return r.value || [];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * AGENT → CONVERSATION IDs
+ * Finds all conversations where the agent participated (any segment),
+ * by querying msdyn_ocsessions owned by those agents.
+ * Cap at 500 sessions to keep the URL size manageable.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function getConvIdsForAgents(agentGuids, dateFrom, dateTo) {
+  const E = CONFIG.entities.session;
+  const parts = [];
+
+  if (agentGuids.length === 1) {
+    parts.push(`${E.ownerLink} eq ${agentGuids[0]}`);
+  } else {
+    parts.push('(' + agentGuids.map(id => `${E.ownerLink} eq ${id}`).join(' or ') + ')');
+  }
+  // Narrow session date range to match conversation date range (performance)
+  if (dateFrom) parts.push(`createdon ge ${new Date(dateFrom).toISOString()}`);
+  if (dateTo)   parts.push(`createdon le ${new Date(dateTo).toISOString()}`);
+
+  const url =
+    `${CONFIG.apiBase}/${E.set}` +
+    `?$filter=${encodeURIComponent(parts.join(' and '))}` +
+    `&$select=${E.convLink}` +
+    `&$top=500`;
+
+  const r = await apiFetch(url);
+  const sessions = r.value || [];
+  return [...new Set(sessions.map(s => s[E.convLink]).filter(Boolean))];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FETCH CONVERSATIONS
+ * Runs the OData query against msdyn_ocliveworkitems.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function fetchConversations(filterParts, convIdList) {
+  const E = CONFIG.entities.conversation;
+  const parts = [...filterParts];
+
+  if (convIdList && convIdList.length > 0) {
+    const ids = convIdList.slice(0, 50); // cap to avoid URL-too-long errors
+    const idF = ids.length === 1
+      ? `activityid eq ${ids[0]}`
+      : '(' + ids.map(id => `activityid eq ${id}`).join(' or ') + ')';
+    parts.push(idF);
+  }
+
+  const select = [
+    'activityid', 'subject', 'createdon',
+    E.duration, E.durationSec, E.channel, E.statecode, E.statereason,
+    E.callerPhone, E.isOutbound,
+    E.queue, E.workstream, E.sentiment, E.transferCount,
+    '_ownerid_value', '_msdyn_customer_value',
+  ].filter(Boolean).join(',');
+
+  // Owner name comes from _ownerid_value@OData.Community.Display.V1.FormattedValue
+  // (expanding ownerid fails — principal type has no fullname property)
+  let url = `${CONFIG.apiBase}/${E.set}`;
+  url += `?$select=${select}`;
+  if (parts.length > 0) url += `&$filter=${encodeURIComponent(parts.join(' and '))}`;
+  url += `&$orderby=createdon desc&$top=500`;
+
+  const r = await apiFetch(url);
+  return r.value || [];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FETCH RECORDINGS
+ * Queries msdyn_ocrecordings for a batch of conversation IDs.
+ * Gracefully returns [] if the entity doesn't exist in the environment.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function fetchRecordingsForConvs(convIds) {
+  if (convIds.length === 0) return [];
+  const E = CONFIG.entities.recording;
+
+  const select = [
+    E.pk, E.name, E.startTime, E.endTime, E.duration, E.uri, E.convLink, 'statecode',
+  ].filter(Boolean).join(',');
+
+  // Batch in groups of 10 to avoid URL-too-long errors
+  const BATCH = 10;
+  const all = [];
+  for (let i = 0; i < Math.min(convIds.length, 50); i += BATCH) {
+    const chunk = convIds.slice(i, i + BATCH);
+    const filter = chunk.length === 1
+      ? `${E.convLink} eq ${chunk[0]}`
+      : '(' + chunk.map(id => `${E.convLink} eq ${id}`).join(' or ') + ')';
+
+    const url =
+      `${CONFIG.apiBase}/${E.set}` +
+      `?$filter=${encodeURIComponent(filter)}` +
+      `&$select=${select}` +
+      `&$top=500`;
+
+    try {
+      const r = await apiFetch(url);
+      if (r.value) all.push(...r.value);
+    } catch (err) {
+      console.warn('[RecSearch] Recording batch fetch failed:', err.message);
+    }
+  }
+  return all;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PHONE CALL CONTEXT — ANI lookup via msdyn_ocphonecallengagementctx
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Search by ANI → returns distinct conversation IDs
+async function getConvIdsForPhone(phoneNum) {
+  const E = CONFIG.entities.phonecallctx;
+  const digits = phoneNum.replace(/[^0-9+]/g, '');
+  if (!digits) return [];
+  const filter = `contains(${E.fromPhone},'${oesc(digits)}')`;
+  const url = `${CONFIG.apiBase}/${E.set}?$filter=${encodeURIComponent(filter)}&$select=${E.convLink}&$top=500`;
+  try {
+    const r = await apiFetch(url);
+    return [...new Set((r.value || []).map(c => c[E.convLink]).filter(Boolean))];
+  } catch (err) {
+    console.warn('[RecSearch] Phone context lookup failed:', err.message);
+    return [];
+  }
+}
+
+// Batch-fetch phone contexts for display — returns convId → ANI map
+async function fetchPhoneContexts(convIds) {
+  const E = CONFIG.entities.phonecallctx;
+  const BATCH = 10;
+  const all = [];
+  for (let i = 0; i < Math.min(convIds.length, 100); i += BATCH) {
+    const chunk = convIds.slice(i, i + BATCH);
+    const filter = chunk.length === 1
+      ? `${E.convLink} eq ${chunk[0]}`
+      : '(' + chunk.map(id => `${E.convLink} eq ${id}`).join(' or ') + ')';
+    const url = `${CONFIG.apiBase}/${E.set}?$filter=${encodeURIComponent(filter)}&$select=${E.convLink},${E.fromPhone},${E.callerName}&$top=200`;
+    try {
+      const r = await apiFetch(url);
+      if (r.value) all.push(...r.value);
+    } catch (err) {
+      console.warn('[RecSearch] Phone context batch fetch failed:', err.message);
+    }
+  }
+  // Build map: convId → ANI string
+  const map = {};
+  all.forEach(ctx => {
+    const cid = ctx[E.convLink];
+    if (cid) map[cid] = ctx[E.fromPhone] || ctx[E.callerName] || '';
+  });
+  return map;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FETCH ALL RECORDING CONVERSATION IDs (for inner-join behaviour)
+ * Returns distinct conversation IDs that have at least one recording.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function fetchAllRecordingsWithConvIds(dateFrom, dateTo) {
+  const E = CONFIG.entities.recording;
+  const dateField = E.startTime || 'createdon';
+  const parts = [];
+  if (dateFrom) parts.push(`${dateField} ge ${new Date(dateFrom).toISOString()}`);
+  if (dateTo)   parts.push(`${dateField} le ${new Date(dateTo).toISOString()}`);
+
+  const select = [
+    E.pk, E.name, E.startTime, E.endTime, E.duration, E.uri, E.convLink, 'statecode',
+  ].filter(Boolean).join(',');
+
+  let url = `${CONFIG.apiBase}/${E.set}?$select=${select}&$top=500`;
+  if (parts.length > 0) url += `&$filter=${encodeURIComponent(parts.join(' and '))}`;
+
+  try {
+    const r = await apiFetch(url);
+    const recs = r.value || [];
+    const ids = [...new Set(recs.map(rec => rec[E.convLink]).filter(Boolean))];
+    return { convIds: ids, recordings: recs };
+  } catch (err) {
+    console.warn('[RecSearch] fetchAllRecordingsWithConvIds failed:', err.message);
+    return { convIds: [], recordings: [] };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MORE FILTERS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function toggleMoreFilters() {
+  const panel   = document.getElementById('moreFiltersPanel');
+  const chevron = document.getElementById('moreFiltersChevron');
+  const isOpen  = !panel.hidden;
+  panel.hidden  = isOpen;
+  chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+function updateMoreFiltersLabel() {
+  const active = [
+    document.getElementById('queueFilter')?.value,
+    document.getElementById('workstreamFilter')?.value,
+    document.getElementById('directionFilter')?.value,
+    document.getElementById('sentimentFilter')?.value,
+    document.getElementById('durMin')?.value,
+    document.getElementById('durMax')?.value,
+  ].filter(Boolean).length
+    + (document.getElementById('recOnly')?.checked ? 1 : 0)
+    + (document.getElementById('transferOnly')?.checked ? 1 : 0);
+
+  const badge = document.getElementById('moreFiltersBadge');
+  if (!badge) return;
+  badge.hidden      = (active === 0);
+  badge.textContent = active;
+
+  // Auto-open the panel if any filters are active
+  if (active > 0) {
+    const panel   = document.getElementById('moreFiltersPanel');
+    const chevron = document.getElementById('moreFiltersChevron');
+    if (panel && panel.hidden) {
+      panel.hidden            = false;
+      chevron.style.transform = 'rotate(90deg)';
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DATE MODE HELPERS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function setDateMode(mode) {
+  const toPreset = (mode === 'preset');
+  const presetEl = document.getElementById('presetOpt');
+  const customEl = document.getElementById('customOpt');
+  if (!presetEl || !customEl) return;
+  // No-op if already in this mode
+  if (toPreset && presetEl.classList.contains('active')) return;
+  if (!toPreset && customEl.classList.contains('active')) return;
+
+  presetEl.classList.toggle('active',   toPreset);
+  presetEl.classList.toggle('inactive', !toPreset);
+  customEl.classList.toggle('active',   !toPreset);
+  customEl.classList.toggle('inactive',  toPreset);
+
+  document.getElementById('datePreset').disabled = !toPreset;
+  document.getElementById('dateFrom').disabled   =  toPreset;
+  document.getElementById('dateTo').disabled     =  toPreset;
+}
+
+function getPresetDates() {
+  const preset = document.getElementById('datePreset').value;
+  const now    = new Date();
+  let from, to = new Date(now);
+
+  switch (preset) {
+    case 'today': {
+      from = new Date(now); from.setHours(0, 0, 0, 0); break;
+    }
+    case 'yesterday': {
+      const d = new Date(now); d.setDate(d.getDate() - 1);
+      from = new Date(d); from.setHours(0, 0, 0, 0);
+      to   = new Date(d); to.setHours(23, 59, 59, 999); break;
+    }
+    case '7d': {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
+    }
+    case '30d': {
+      from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break;
+    }
+    case '90d': {
+      from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); break;
+    }
+    case 'thismonth': {
+      from = new Date(now.getFullYear(), now.getMonth(), 1); break;
+    }
+    case 'lastmonth': {
+      from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      to   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); break;
+    }
+    default: {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+  }
+  const fmt = d => d.toISOString().slice(0, 16);
+  return { dateFrom: fmt(from), dateTo: fmt(to) };
+}
+
+function getEffectiveDates() {
+  const isPreset = document.getElementById('presetOpt')?.classList.contains('active');
+  if (isPreset) return getPresetDates();
+  return {
+    dateFrom: document.getElementById('dateFrom').value,
+    dateTo:   document.getElementById('dateTo').value,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DROPDOWN INIT — populate Queue and Workstream from Dataverse
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function initDropdowns() {
+  async function populate(selectId, url, valFn, labelFn) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    try {
+      const r = await apiFetch(url);
+      (r.value || []).forEach(item => {
+        const opt = document.createElement('option');
+        opt.value       = valFn(item);
+        opt.textContent = labelFn(item);
+        sel.appendChild(opt);
+      });
+    } catch {
+      /* leave "All" as the only option if lookup fails */
+    }
+  }
+
+  await Promise.all([
+    populate(
+      'queueFilter',
+      `${CONFIG.apiBase}/queues?$filter=queuetypecode eq 1&$select=queueid,name&$orderby=name&$top=200`,
+      q => q.queueid,
+      q => q.name,
+    ),
+    populate(
+      'workstreamFilter',
+      `${CONFIG.apiBase}/msdyn_liveworkstreams?$select=msdyn_liveworkstreamid,msdyn_name&$orderby=msdyn_name&$top=200`,
+      w => w.msdyn_liveworkstreamid,
+      w => w.msdyn_name,
+    ),
+  ]);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MAIN SEARCH
+ * ═══════════════════════════════════════════════════════════════════════════ */
+async function doSearch() {
+  if (state.searching) return;
+
+  const { dateFrom, dateTo } = getEffectiveDates();
+  const agentName    = document.getElementById('agentSearch').value.trim();
+  const phoneNum     = document.getElementById('phoneSearch').value.trim();
+  const contactName  = document.getElementById('contactSearch').value.trim();
+  const queueId      = document.getElementById('queueFilter').value;
+  const workstreamId = document.getElementById('workstreamFilter').value;
+  const direction    = document.getElementById('directionFilter').value;
+  const sentiment    = document.getElementById('sentimentFilter').value;
+  const durMin       = document.getElementById('durMin').value;
+  const durMax       = document.getElementById('durMax').value;
+
+  setHint('', false);
+
+  state.searching = true;
+  document.getElementById('searchBtn').disabled = true;
+  showState('Loading');
+
+  try {
+    const filterParts = [];
+    let   convIdList  = null;
+
+    // ── Date range (on conversation createdon) ───────────────────────────────
+    if (dateFrom) filterParts.push(`createdon ge ${new Date(dateFrom).toISOString()}`);
+    if (dateTo)   filterParts.push(`createdon le ${new Date(dateTo).toISOString()}`);
+
+    // ── Agent filter: resolve name → GUIDs → session conversation IDs ────────
+    if (agentName) {
+      setStep('Looking up agent…');
+      const agents = await lookupAgents(agentName);
+      if (agents.length === 0) {
+        setNoResults(`No active agents found matching "${agentName}".`);
+        return;
+      }
+      setStep(`Found ${agents.length} agent(s) — checking sessions…`);
+      const guids = agents.map(a => a.systemuserid);
+      convIdList = await getConvIdsForAgents(guids, dateFrom, dateTo);
+      if (convIdList.length === 0) {
+        setNoResults(`No conversations found where "${agentName}" participated${dateFrom || dateTo ? ' in the selected date range' : ''}.`);
+        return;
+      }
+    }
+
+    // ── Phone number filter — query ANI via msdyn_ocphonecallengagementctx ──────
+    if (phoneNum) {
+      setStep('Looking up caller number…');
+      const phoneConvIds = await getConvIdsForPhone(phoneNum);
+      if (phoneConvIds.length === 0) {
+        setNoResults(`No conversations found with a caller number matching "${phoneNum}".`);
+        return;
+      }
+      if (convIdList) {
+        const existingSet = new Set(convIdList);
+        const intersected = phoneConvIds.filter(id => existingSet.has(id));
+        if (intersected.length === 0) {
+          setNoResults('No conversations matched both the agent and caller number criteria.');
+          return;
+        }
+        convIdList = intersected;
+      } else {
+        convIdList = phoneConvIds;
+      }
+    }
+
+    // ── Contact filter: resolve name → GUIDs ──────────────────────────────────
+    if (contactName) {
+      setStep('Looking up contact…');
+      const contacts = await lookupContacts(contactName);
+      if (contacts.length === 0) {
+        setNoResults(`No contacts found matching "${contactName}".`);
+        return;
+      }
+      if (contacts.length === 1) {
+        filterParts.push(`_msdyn_customer_value eq ${contacts[0].contactid}`);
+      } else {
+        filterParts.push(
+          '(' + contacts.map(c => `_msdyn_customer_value eq ${c.contactid}`).join(' or ') + ')'
+        );
+      }
+    }
+
+    // ── Queue filter ─────────────────────────────────────────────────────────
+    if (queueId) filterParts.push(`_msdyn_cdsqueueid_value eq ${queueId}`);
+
+    // ── Workstream filter ─────────────────────────────────────────────────────
+    if (workstreamId) filterParts.push(`_msdyn_liveworkstreamid_value eq ${workstreamId}`);
+
+    // ── Direction filter ──────────────────────────────────────────────────────
+    if (direction !== '') filterParts.push(`msdyn_isoutbound eq ${direction}`);
+
+    // ── Sentiment filter ──────────────────────────────────────────────────────
+    if (sentiment === 'pos') filterParts.push('msdyn_customersentimentlabel le 9');
+    else if (sentiment === '10') filterParts.push('msdyn_customersentimentlabel eq 10');
+    else if (sentiment === 'neg') filterParts.push('msdyn_customersentimentlabel ge 11');
+
+    // ── Duration filter (minutes → seconds via msdyn_conversationhandletimeinseconds) ──
+    if (durMin) filterParts.push(`msdyn_conversationhandletimeinseconds ge ${Math.round(parseFloat(durMin) * 60)}`);
+    if (durMax) filterParts.push(`msdyn_conversationhandletimeinseconds le ${Math.round(parseFloat(durMax) * 60)}`);
+
+    // ── Recordings-first mode (inner-join behaviour) ────────────────────────
+    // When "Recordings Only" is checked, pre-query recordings to get conversation
+    // IDs that have recordings, then filter the main query to only those IDs.
+    // This matches the FetchXML inner-join to msdyn_ocrecording.
+    // We fetch full recording data upfront so we don't need a second round.
+    const recOnly = document.getElementById('recOnly').checked;
+    let   prefetchedRecs = null;
+
+    if (recOnly) {
+      setStep('Finding conversations with recordings…');
+      const result = await fetchAllRecordingsWithConvIds(dateFrom, dateTo);
+      if (result.convIds.length === 0) {
+        setNoResults('No recordings found in the selected date range.');
+        return;
+      }
+      prefetchedRecs = result.recordings;
+      let recConvIds = result.convIds;
+      // Merge with agent-filtered convIdList if both active
+      if (convIdList) {
+        const agentSet = new Set(convIdList);
+        recConvIds = recConvIds.filter(id => agentSet.has(id));
+        if (recConvIds.length === 0) {
+          setNoResults('No recordings found for the matching agent conversations.');
+          return;
+        }
+      }
+      convIdList = recConvIds;
+    }
+
+    // ── Fetch conversations ───────────────────────────────────────────────────
+    setStep('Fetching conversations…');
+    const conversations = await fetchConversations(filterParts, convIdList);
+    if (conversations.length === 0) {
+      setNoResults('No conversations found matching your search criteria.');
+      return;
+    }
+
+    // ── Fetch recordings ──────────────────────────────────────────────────────
+    let recs;
+    if (prefetchedRecs) {
+      // Already have full recording data from the pre-query — no second fetch needed
+      const convSet = new Set(conversations.map(c => c.activityid));
+      recs = prefetchedRecs.filter(r => convSet.has(r[CONFIG.entities.recording.convLink]));
+      setStep(`Matched ${recs.length} recording(s) to ${conversations.length} conversation(s).`);
+    } else {
+      setStep(`Found ${conversations.length} conversation(s) — fetching recordings…`);
+      const convIds = conversations.map(c => c.activityid);
+      recs = await fetchRecordingsForConvs(convIds);
+    }
+
+    // Build recording map: conversationId → recording[]
+    const recMap = {};
+    recs.forEach(rec => {
+      const cid = rec[CONFIG.entities.recording.convLink];
+      if (cid) {
+        if (!recMap[cid]) recMap[cid] = [];
+        recMap[cid].push(rec);
+      }
+    });
+
+    console.log('[RecSearch] recMap keys:', Object.keys(recMap).length);
+    console.log('[RecSearch] conversations[0].activityid:', conversations[0]?.activityid);
+    console.log('[RecSearch] recMap sample key:', Object.keys(recMap)[0]);
+    console.log('[RecSearch] match test:', !!recMap[conversations[0]?.activityid]);
+
+    // ── Fetch caller numbers (ANI) from phone call engagement context ─────────
+    setStep('Fetching caller numbers…');
+    const convIds = conversations.map(c => c.activityid);
+    const phoneMap = await fetchPhoneContexts(convIds);
+
+    // ── Commit to state & render ──────────────────────────────────────────────
+    state.allResults = conversations;
+    state.recMap     = recMap;
+    state.phoneMap   = phoneMap;
+    state.page       = 0;
+    console.log('[RecSearch] calling applyRecFilter...');
+    applyRecFilter(); // sets state.filtered and renders
+    console.log('[RecSearch] applyRecFilter done, filtered:', state.filtered.length);
+
+    document.getElementById('lastSearchTime').textContent =
+      'Last search: ' +
+      new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    showState('Results');
+    saveToSession();
+
+  } catch (err) {
+    setError(`Search failed: ${err.message}`);
+    console.error('[RecSearch] Search error:', err);
+  } finally {
+    state.searching = false;
+    document.getElementById('searchBtn').disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SORT
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function sortBy(col) {
+  if (state.sort.col === col) {
+    state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.sort.col = col;
+    // Dates and recording count default desc; everything else asc
+    state.sort.dir = (col === 'createdon' || col === 'recording') ? 'desc' : 'asc';
+  }
+  state.page = 0;
+  applySortToFiltered();
+  renderPage();
+  updateSortHeaders();
+}
+
+function getSortValue(conv, col) {
+  const E = CONFIG.entities.conversation;
+  switch (col) {
+    case 'createdon': return conv.createdon || '';
+    case 'duration':  return conv[E.durationSec] ?? conv[E.duration] ?? -1;
+    case 'agent':     return (conv['_ownerid_value@OData.Community.Display.V1.FormattedValue'] || '').toLowerCase();
+    case 'phone':     return (state.phoneMap[conv.activityid] || '').toLowerCase();
+    case 'contact':   return (conv['_msdyn_customer_value@OData.Community.Display.V1.FormattedValue'] || '').toLowerCase();
+    case 'channel':   return (conv['msdyn_channel@OData.Community.Display.V1.FormattedValue'] || '').toLowerCase();
+    case 'recording': return state.recMap[conv.activityid]?.length || 0;
+    default:          return '';
+  }
+}
+
+function applySortToFiltered() {
+  const { col, dir } = state.sort;
+  const mul = dir === 'asc' ? 1 : -1;
+  state.filtered.sort((a, b) => {
+    const av = getSortValue(a, col);
+    const bv = getSortValue(b, col);
+    if (av < bv) return -1 * mul;
+    if (av > bv) return  1 * mul;
+    return 0;
+  });
+}
+
+function updateSortHeaders() {
+  const { col, dir } = state.sort;
+  document.querySelectorAll('.results-table thead th.sortable').forEach(th => {
+    const thCol = th.getAttribute('onclick')?.match(/sortBy\('(\w+)'\)/)?.[1];
+    th.classList.toggle('sort-active', thCol === col);
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = thCol === col ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FILTER: Recordings-only toggle (client-side, no re-query)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function applyRecFilter() {
+  const recOnly      = document.getElementById('recOnly').checked;
+  const transferOnly = document.getElementById('transferOnly').checked;
+  const E = CONFIG.entities.conversation;
+
+  let results = state.allResults;
+  if (recOnly)      results = results.filter(c => (state.recMap[c.activityid]?.length || 0) > 0);
+  if (transferOnly) results = results.filter(c => (c[E.transferCount] || 0) > 0);
+
+  state.filtered = results;
+  state.page = 0;
+  if (state.filtered.length === 0 && state.allResults.length > 0) {
+    setNoResults('No results match the current filters. Adjust the toggles below to see more.');
+    return;
+  }
+  if (state.allResults.length > 0) {
+    applySortToFiltered();
+    renderPage();
+    showState('Results');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * RENDER: Table page
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function renderPage() {
+  const { filtered, recMap, page } = state;
+  const pageSize   = CONFIG.pageSize;
+  const total      = filtered.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const start      = page * pageSize;
+  const end        = Math.min(start + pageSize, total);
+  const items      = filtered.slice(start, end);
+
+  // Summary
+  const recCount   = filtered.filter(c => (recMap[c.activityid]?.length || 0) > 0).length;
+  document.getElementById('resultSummary').innerHTML =
+    `<strong>${total}</strong> conversation${total !== 1 ? 's' : ''} &nbsp;·&nbsp; ` +
+    `<strong>${recCount}</strong> with recording`;
+
+  // Pagination info
+  const pageText = totalPages > 1
+    ? `${start + 1}–${end} of ${total}`
+    : `${total} result${total !== 1 ? 's' : ''}`;
+
+  ['pageInfo', 'pageInfo2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = pageText;
+  });
+  ['prevBtn', 'prevBtn2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = (page === 0);
+  });
+  ['nextBtn', 'nextBtn2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = (page >= totalPages - 1);
+  });
+
+  // Rows
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+
+  items.forEach(conv => {
+    const recs   = recMap[conv.activityid] || [];
+    const hasRec = recs.length > 0;
+    const E      = CONFIG.entities.conversation;
+    const dt     = fmtDateTime(conv.createdon);
+
+    const agent    = conv[E.agentNav]?.fullname
+                  || conv['_ownerid_value@OData.Community.Display.V1.FormattedValue']
+                  || '—';
+    const customer = conv['_msdyn_customer_value@OData.Community.Display.V1.FormattedValue'] || '—';
+    const phone    = state.phoneMap[conv.activityid] || '—';
+    const chRaw    = conv[E.channel];
+    const chFmt    = conv[`${E.channel}@OData.Community.Display.V1.FormattedValue`];
+    const channel  = channelLabel(chRaw, chFmt);
+    const dur      = fmtDurationMin(conv[E.duration]);
+    const sc       = conv[E.statecode] ?? -1;
+    const cid      = conv.activityid;
+
+    // ── Main row ─────────────────────────────────────────────────────────────
+    const tr = document.createElement('tr');
+    tr.className = 'result-row';
+    tr.id = `row-${cid}`;
+    tr.addEventListener('click', function (e) {
+      // Don't navigate if user clicked a button inside the row
+      if (e.target.closest('button')) return;
+      openInDynamics(cid);
+    });
+    tr.innerHTML = `
+      <td class="cell-dt">
+        <div class="dt-date">${esc(dt.date)}</div>
+        <div class="dt-time">${esc(dt.time)}</div>
+      </td>
+      <td class="cell-dur">${esc(dur)}</td>
+      <td class="cell-agent">${esc(agent)}</td>
+      <td class="cell-phone">${esc(phone)}</td>
+      <td class="cell-contact col-contact"><span class="trunc" title="${esc(customer)}">${esc(customer)}</span></td>
+      <td class="cell-channel col-channel">
+        <span class="badge ${channelClass(chRaw)}">${esc(channel)}</span>
+      </td>
+      <td class="cell-rec col-rec">
+        ${hasRec
+          ? `<button class="rec-btn" onclick="toggleDetail('${cid}')">
+               ▶&nbsp;${recs.length > 1 ? recs.length + ' recs' : 'Play'}
+             </button>`
+          : `<span class="rec-none">—</span>`}
+      </td>
+      <td class="cell-actions">
+        <button class="btn btn-sm btn-secondary" onclick="toggleDetail('${cid}')">Detail</button>
+        <button class="btn btn-sm btn-primary" onclick="openInDynamics('${cid}')" title="Open conversation in Dynamics">↗</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    // ── Detail row (hidden) ───────────────────────────────────────────────────
+    const dtr = document.createElement('tr');
+    dtr.className = 'detail-row';
+    dtr.id = `detail-${cid}`;
+    dtr.hidden = true;
+    dtr.innerHTML = `<td colspan="8">${buildDetailHTML(conv, recs)}</td>`;
+    tbody.appendChild(dtr);
+  });
+
+  updateSortHeaders();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BUILD DETAIL PANEL HTML
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function buildDetailHTML(conv, recs) {
+  const E   = CONFIG.entities;
+  const sc  = conv[E.conversation.statecode] ?? -1;
+  const cid = conv.activityid;
+
+  const agent    = conv[E.conversation.agentNav]?.fullname
+                || conv['_ownerid_value@OData.Community.Display.V1.FormattedValue'] || '—';
+  const customer = conv['_msdyn_customer_value@OData.Community.Display.V1.FormattedValue'] || '—';
+  const phone    = state.phoneMap[conv.activityid] || '—';
+  const isOut    = conv[E.conversation.isOutbound];
+  const dur      = fmtDurationMin(conv[E.conversation.duration]);
+  const created  = fmtDateTime(conv.createdon);
+
+  let html = `<div class="detail-panel">
+    <div class="detail-grid">
+      <div class="detail-field">
+        <label>Subject</label>
+        <span>${esc(conv.subject || '(no subject)')}</span>
+      </div>
+      <div class="detail-field">
+        <label>Created</label>
+        <span>${esc(created.date)} ${esc(created.time)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Duration</label>
+        <span>${esc(dur)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Agent</label>
+        <span>${esc(agent)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Caller Number</label>
+        <span style="font-family:monospace">${esc(phone)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Contact</label>
+        <span>${esc(customer)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Direction</label>
+        <span>${isOut ? 'Outbound' : 'Inbound'}</span>
+      </div>
+      <div class="detail-field">
+        <label>Status</label>
+        <span class="badge ${stateClass(sc)}">${stateLabel(sc)}</span>
+      </div>
+      <div class="detail-field">
+        <label>Conversation ID</label>
+        <span style="font-size:11px;color:var(--text-muted)">${esc(cid)}</span>
+      </div>
+    </div>`;
+
+  // Recordings
+  if (recs.length > 0) {
+    html += `<div class="detail-recordings">`;
+    recs.forEach((rec, i) => {
+      const ER      = E.recording;
+      const uri     = rec[ER.uri];
+      const recDur  = fmtDurationSec(rec[ER.duration]);
+      const recStart = fmtDateTime(rec[ER.startTime]);
+
+      html += `<div class="recording-card">
+        <div class="recording-card-header">
+          <span class="recording-card-title">▶ Recording${recs.length > 1 ? ' ' + (i + 1) : ''}</span>
+          <span class="recording-card-meta">${esc(recStart.date)} ${esc(recStart.time)}${recDur !== '—' ? ' &nbsp;·&nbsp; ' + esc(recDur) : ''}</span>
+        </div>`;
+
+      if (uri) {
+        html += `<audio controls preload="none">
+          <source src="${esc(uri)}" type="audio/mpeg">
+          <source src="${esc(uri)}" type="audio/wav">
+          <source src="${esc(uri)}" type="audio/ogg">
+          Your browser does not support the audio element.
+        </audio>
+        <a class="rec-link btn-link" href="${esc(uri)}" target="_blank" rel="noopener">
+          Open recording URL ↗
+        </a>`;
+      } else {
+        html += `<p class="rec-fallback">
+          Recording URI not available — check storage configuration or contact your admin.
+        </p>`;
+      }
+
+      html += `</div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<p style="font-size:12px;color:var(--text-muted);margin-top:8px">
+      No recording found for this conversation.
+    </p>`;
+  }
+
+  html += `<div class="detail-actions">
+    <button class="btn btn-primary" onclick="openInDynamics('${cid}')">
+      Open Conversation in Dynamics ↗
+    </button>
+    <button class="btn btn-secondary" onclick="toggleDetail('${cid}')">
+      Close
+    </button>
+  </div>
+  </div>`;
+
+  return html;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * TOGGLE DETAIL ROW
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function toggleDetail(cid) {
+  const row    = document.getElementById(`row-${cid}`);
+  const detail = document.getElementById(`detail-${cid}`);
+  if (!detail) return;
+  const opening = detail.hidden;
+  detail.hidden = !opening;
+  if (row) row.classList.toggle('expanded', opening);
+  if (opening) {
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * OPEN IN DYNAMICS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function openInDynamics(cid) {
+  try {
+    const xrm = window.Xrm || window.parent?.Xrm;
+    // Try Microsoft.Apm (App Profile Manager) for a proper CSW session tab
+    const apm = window.Microsoft?.Apm || window.parent?.Microsoft?.Apm;
+    if (apm?.createSession) {
+      apm.createSession({
+        templateName: 'msdyn_ocliveworkitem',
+        sessionInput: {
+          entityName: 'msdyn_ocliveworkitem',
+          entityId: cid,
+        },
+      }).catch(function () {
+        // Template not found — fall back to generic entity session
+        xrm?.Navigation?.navigateTo(
+          { pageType: 'entityrecord', entityName: 'msdyn_ocliveworkitem', entityId: cid },
+          { target: 1 }
+        );
+      });
+    } else if (xrm?.Navigation?.navigateTo) {
+      xrm.Navigation.navigateTo(
+        { pageType: 'entityrecord', entityName: 'msdyn_ocliveworkitem', entityId: cid },
+        { target: 1 }
+      );
+    } else {
+      window.open(
+        `${window.location.origin}/main.aspx?etn=msdyn_ocliveworkitem&id=${cid}&newWindow=true&pagetype=entityrecord`,
+        '_blank'
+      );
+    }
+  } catch (err) {
+    console.warn('[RecSearch] openInDynamics error:', err.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PAGINATION
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function prevPage() {
+  if (state.page > 0) {
+    state.page--;
+    renderPage();
+    document.querySelector('.results-bar')?.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function nextPage() {
+  const totalPages = Math.ceil(state.filtered.length / CONFIG.pageSize);
+  if (state.page < totalPages - 1) {
+    state.page++;
+    renderPage();
+    document.querySelector('.results-bar')?.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SESSION CACHE — survive CSW tab switches (iframe reload)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const CACHE_KEY = 'recSearch_cache';
+
+function saveToSession() {
+  try {
+    const data = {
+      allResults: state.allResults,
+      recMap:     state.recMap,
+      phoneMap:   state.phoneMap,
+      filtered:   state.filtered,
+      page:       state.page,
+      sort:       state.sort,
+      inputs: {
+        dateMode:    document.getElementById('presetOpt')?.classList.contains('active') ? 'preset' : 'custom',
+        datePreset:  document.getElementById('datePreset').value,
+        dateFrom:    document.getElementById('dateFrom').value,
+        dateTo:      document.getElementById('dateTo').value,
+        agent:       document.getElementById('agentSearch').value,
+        phone:       document.getElementById('phoneSearch').value,
+        contact:     document.getElementById('contactSearch').value,
+        queue:       document.getElementById('queueFilter').value,
+        workstream:  document.getElementById('workstreamFilter').value,
+        direction:   document.getElementById('directionFilter').value,
+        sentiment:   document.getElementById('sentimentFilter').value,
+        durMin:      document.getElementById('durMin').value,
+        durMax:      document.getElementById('durMax').value,
+        recOnly:     document.getElementById('recOnly').checked,
+        transferred: document.getElementById('transferOnly').checked,
+      },
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch { /* storage full or unavailable — ignore */ }
+}
+
+function restoreFromSession() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    // Expire after 10 minutes
+    if (Date.now() - data.timestamp > 10 * 60 * 1000) {
+      sessionStorage.removeItem(CACHE_KEY);
+      return false;
+    }
+    // Restore form inputs
+    if (data.inputs.dateMode) setDateMode(data.inputs.dateMode);
+    if (data.inputs.datePreset) document.getElementById('datePreset').value = data.inputs.datePreset;
+    document.getElementById('dateFrom').value         = data.inputs.dateFrom    || '';
+    document.getElementById('dateTo').value           = data.inputs.dateTo      || '';
+    document.getElementById('agentSearch').value      = data.inputs.agent       || '';
+    document.getElementById('phoneSearch').value      = data.inputs.phone       || '';
+    document.getElementById('contactSearch').value    = data.inputs.contact     || '';
+    document.getElementById('queueFilter').value      = data.inputs.queue       || '';
+    document.getElementById('workstreamFilter').value = data.inputs.workstream  || '';
+    document.getElementById('directionFilter').value  = data.inputs.direction   || '';
+    document.getElementById('sentimentFilter').value  = data.inputs.sentiment   || '';
+    document.getElementById('durMin').value           = data.inputs.durMin      || '';
+    document.getElementById('durMax').value           = data.inputs.durMax      || '';
+    document.getElementById('recOnly').checked        = data.inputs.recOnly;
+    document.getElementById('transferOnly').checked   = data.inputs.transferred || false;
+    // Restore state
+    state.allResults = data.allResults || [];
+    state.recMap     = data.recMap     || {};
+    state.phoneMap   = data.phoneMap   || {};
+    state.filtered   = data.filtered   || [];
+    state.page       = data.page       || 0;
+    if (data.sort) state.sort = data.sort;
+    updateMoreFiltersLabel();
+    if (state.filtered.length > 0) {
+      renderPage();
+      showState('Results');
+      return true;
+    }
+  } catch { /* corrupt data — ignore */ }
+  return false;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CLEAR SEARCH
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function clearSearch() {
+  ['agentSearch', 'phoneSearch', 'contactSearch', 'dateFrom', 'dateTo', 'durMin', 'durMax'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['queueFilter', 'workstreamFilter', 'directionFilter', 'sentimentFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  const recOnly     = document.getElementById('recOnly');
+  const transferOnly = document.getElementById('transferOnly');
+  if (recOnly)      recOnly.checked = false;
+  if (transferOnly) transferOnly.checked = false;
+  setDateMode('preset');
+  document.getElementById('datePreset').value = '7d';
+  updateMoreFiltersLabel();
+  setHint('', false);
+  state.allResults = [];
+  state.recMap     = {};
+  state.phoneMap   = {};
+  state.filtered   = [];
+  state.page       = 0;
+  showState('Initial');
+  document.getElementById('lastSearchTime').textContent = '';
+  try { sessionStorage.removeItem(CACHE_KEY); } catch {}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VERSION SELF-CHECK
+ * Fetches this page with cache: 'no-store' 8s after load, then every 5 min.
+ * Shows reload banner if a newer version is detected.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function startVersionCheck() {
+  setTimeout(checkVersion, 8000);
+  setInterval(checkVersion, 5 * 60 * 1000);
+}
+
+async function checkVersion() {
+  try {
+    const resp = await fetch(window.location.href, { cache: 'no-store' });
+    const html = await resp.text();
+    const m = html.match(/version:\s*'([^']+)'/);
+    if (m && m[1] !== CONFIG.version) {
+      document.getElementById('updateBanner').hidden = false;
+    }
+  } catch { /* network error — ignore */ }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * INIT
+ * ═══════════════════════════════════════════════════════════════════════════ */
+(function init() {
+  // Stamp version badge
+  const badge = document.getElementById('versionBadge');
+  if (badge) badge.textContent = `v${CONFIG.version}`;
+
+  // Enter key triggers search from any text/number input
+  ['agentSearch', 'phoneSearch', 'contactSearch', 'durMin', 'durMax'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  });
+
+  // Populate queue and workstream dropdowns from Dataverse
+  initDropdowns();
+
+  // Start version polling
+  startVersionCheck();
+
+  // Restore previous search results if returning from another tab
+  if (!restoreFromSession()) {
+    showState('Initial');
+  }
+})();
+</script>
+
+</body>
+</html>
