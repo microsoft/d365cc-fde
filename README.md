@@ -135,6 +135,30 @@ See all agents at a glance with Teams-style presence icons. Filter by queue, vie
 
 </td>
 </tr>
+<tr>
+<td width="120" align="center">
+<br />
+<img src="./assets/d365cc-logo.png" width="60" alt="Recording Search" />
+<br /><br />
+</td>
+<td>
+
+### [Recording Search](./tools/recording-search/)
+
+**Search voice conversations and recordings in Customer Service Workspace**
+
+Stop hunting through conversation lists. Search any voice interaction by agent, caller number, date range, contact, queue, and sentiment — with inline recording playback, without leaving CSW.
+
+[![Version](https://img.shields.io/badge/version-1.4.1-blue)](#)
+[![Platform](https://img.shields.io/badge/Dataverse-Web%20Resource-742774)](#)
+[![CSW](https://img.shields.io/badge/CSW-App%20Tab-0078D7)](#)
+
+**Features:** Multi-criteria search · Inline recording playback · Sortable results · Open in Dynamics · 10-min session cache
+
+[**Deploy Now →**](./tools/recording-search/#installation)
+
+</td>
+</tr>
 </table>
 
 <details>
