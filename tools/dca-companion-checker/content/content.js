@@ -63,7 +63,11 @@
           break;
           
         case 'SYNC_PRESENCE':
-          const result = await this.syncPresenceToD365(message.presenceId, message.presenceName);
+          const result = await this.syncPresenceToD365(
+            message.presenceId, 
+            message.presenceName,
+            message.checkFirst || false
+          );
           sendResponse(result);
           break;
           
@@ -75,9 +79,10 @@
     /**
      * Sync agent presence to D365 using Web API
      * Uses the CCaaS_ModifyAgentPresence custom API
+     * @param checkFirst - If true, check current presence and skip if already set (preserves metrics)
      */
-    async syncPresenceToD365(presenceId, presenceName) {
-      console.log(`[DCA Checker] Syncing presence: ${presenceName} (${presenceId})`);
+    async syncPresenceToD365(presenceId, presenceName, checkFirst = false) {
+      console.log(`[DCA Checker] Syncing presence: ${presenceName} (${presenceId})${checkFirst ? ' [check first]' : ''}`);
       
       try {
         // Get current user's system user ID
@@ -88,6 +93,17 @@
         }
         
         console.log(`[DCA Checker] Current user ID: ${userId}`);
+        
+        // If checkFirst is true, get current presence and skip if already set
+        // This prevents creating duplicate history entries and preserves accurate metrics
+        if (checkFirst) {
+          const currentPresenceId = await this.getCurrentPresenceId(userId);
+          if (currentPresenceId && currentPresenceId.toLowerCase() === presenceId.toLowerCase()) {
+            console.log(`[DCA Checker] Presence already set to ${presenceName}, skipping to preserve metrics`);
+            return { success: true, skipped: true, presenceName: presenceName };
+          }
+          console.log(`[DCA Checker] Current presence (${currentPresenceId}) differs from target (${presenceId}), updating...`);
+        }
         
         // Call the CCaaS_ModifyAgentPresence API
         const apiUrl = '/api/data/v9.2/CCaaS_ModifyAgentPresence';
@@ -122,6 +138,43 @@
       } catch (error) {
         console.error('[DCA Checker] Error syncing presence:', error);
         return { success: false, error: error.message };
+      }
+    },
+
+    /**
+     * Get the current presence ID for the user from msdyn_agentstatus
+     */
+    async getCurrentPresenceId(userId) {
+      try {
+        // Query msdyn_agentstatus to get current presence
+        const filter = `_msdyn_agentid_value eq '${userId}'`;
+        const select = '_msdyn_currentpresenceid_value';
+        const apiUrl = `/api/data/v9.2/msdyn_agentstatuses?$filter=${encodeURIComponent(filter)}&$select=${select}`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0'
+          },
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.value && data.value.length > 0) {
+            const presenceId = data.value[0]._msdyn_currentpresenceid_value;
+            console.log(`[DCA Checker] Current presence ID: ${presenceId}`);
+            return presenceId;
+          }
+        }
+        
+        console.log('[DCA Checker] Could not get current presence ID');
+        return null;
+      } catch (error) {
+        console.error('[DCA Checker] Error getting current presence:', error);
+        return null;
       }
     },
 

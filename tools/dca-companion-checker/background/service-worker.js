@@ -246,10 +246,12 @@ async function enforcePresenceIfNeeded() {
   }
   
   if (!currentStatus.isRunning) {
-    // DCA is NOT running - keep enforcing "Away - DCA Not Running" presence
+    // DCA is NOT running - enforce "Away - DCA Not Running" presence
+    // BUT: Only set if current presence is NOT already "DCA Not Running"
+    // This preserves accurate history/metrics by avoiding duplicate entries
     if (settings.dcaNotRunningPresenceId) {
-      console.log('[DCA Checker] Enforcing presence: DCA Not Running');
-      await syncPresenceToD365(settings.dcaNotRunningPresenceId, 'DCA Not Running');
+      console.log('[DCA Checker] Checking if presence enforcement needed...');
+      await syncPresenceToD365(settings.dcaNotRunningPresenceId, 'DCA Not Running', true);
     }
   }
   // Note: We only restore "Available" once (on status change), not continuously
@@ -305,13 +307,14 @@ async function handleStatusChange(wasRunning, isRunning) {
 
 // Sync agent presence to D365 via content script
 // The content script has access to the page context and can make authenticated Web API calls
-async function syncPresenceToD365(presenceId, presenceName) {
+// @param checkFirst - If true, only set presence if current presence doesn't match (preserves metrics)
+async function syncPresenceToD365(presenceId, presenceName, checkFirst = false) {
   if (!presenceId) {
     console.log('[DCA Checker] Skipping presence sync - no presence ID configured');
     return;
   }
   
-  console.log(`[DCA Checker] Syncing presence to D365: ${presenceName} (${presenceId})`);
+  console.log(`[DCA Checker] Syncing presence to D365: ${presenceName} (${presenceId})${checkFirst ? ' [check first]' : ''}`);
   
   try {
     // Send message to all D365 tabs to sync presence
@@ -328,11 +331,16 @@ async function syncPresenceToD365(presenceId, presenceName) {
     const response = await chrome.tabs.sendMessage(targetTab.id, {
       type: 'SYNC_PRESENCE',
       presenceId: presenceId,
-      presenceName: presenceName
+      presenceName: presenceName,
+      checkFirst: checkFirst  // If true, content script will check current presence first
     });
     
     if (response?.success) {
-      console.log(`[DCA Checker] Presence synced successfully to ${presenceName}`);
+      if (response.skipped) {
+        console.log(`[DCA Checker] Presence already set to ${presenceName}, skipped (preserving metrics)`);
+      } else {
+        console.log(`[DCA Checker] Presence synced successfully to ${presenceName}`);
+      }
     } else {
       console.warn('[DCA Checker] Presence sync failed:', response?.error);
     }

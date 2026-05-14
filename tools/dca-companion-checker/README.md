@@ -1198,27 +1198,57 @@ The extension can automatically update agent presence in Dynamics 365 based on D
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Continuous Enforcement (Like the Warning Banner)
+#### Smart Enforcement (Preserves Metrics)
 
-Just as the warning banner stays visible while DCA is not running, the presence sync **continuously re-applies** the "DCA Not Running" status on every check interval. This prevents D365 from overwriting our status:
+The extension **checks current presence before setting** to preserve accurate history and metrics:
 
-| DCA Status | Enforcement | Frequency |
-|------------|-------------|-----------|
-| Not Running | **Continuous** | Every check interval (15-60s) |
-| Running | One-time restore | Only when DCA starts |
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SMART CHECK-BEFORE-SET                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Check 1: DCA stopped                                                   │
+│    └── Current presence = "Available"                                  │
+│    └── Target ≠ Current → SET to "DCA Not Running" ✓                   │
+│                                                                         │
+│  Check 2: DCA still stopped (30s later)                                │
+│    └── Current presence = "DCA Not Running"                            │
+│    └── Target = Current → SKIP (no API call)                           │
+│                                                                         │
+│  Check 3-N: Same as Check 2 → SKIP                                     │
+│                                                                         │
+│  Check N+1: D365 overwrote to "Available" (rare)                       │
+│    └── Current presence = "Available"                                  │
+│    └── Target ≠ Current → SET to "DCA Not Running" ✓                   │
+│                                                                         │
+│  RESULT: Only 2 history entries instead of 100+                        │
+│          Accurate "time in status" metrics preserved ✓                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-This design ensures that even in Soft/None enforcement modes, where the page loads before DCA verification, the agent **cannot remain Available** for long.
+| Scenario | Action | History Entries |
+|----------|--------|-----------------|
+| DCA stops | Set "DCA Not Running" | 1 entry |
+| DCA still stopped | Check → Skip (already set) | 0 entries |
+| D365 overwrites | Check → Set again | 1 entry |
+| DCA starts | Set "Available" | 1 entry |
+
+This design ensures:
+- **Metrics stay accurate** - Supervisor sees correct "time in status"
+- **History stays clean** - No duplicate entries every 30 seconds
+- **Still catches overwrites** - If D365 changes presence, we fix it on next check
 
 #### Benefits
 
 | Feature | Benefit |
 |---------|---------|
 | **Automatic routing stop** | No new calls routed to agents without DCA |
-| **Continuous enforcement** | D365 can't overwrite our status |
+| **Metric-preserving** | Check before set avoids duplicate history entries |
 | **Supervisor visibility** | "DCA Not Running" status visible in dashboards |
-| **History tracking** | Presence changes logged in `msdyn_agentstatushistory` |
+| **Accurate history** | Only records actual status changes |
 | **No new tables** | Uses existing D365 presence infrastructure |
-| **Self-healing** | Automatically restores "Available" when DCA starts |
+| **Self-healing** | Catches D365 overwrites on next check interval |
 
 #### Requirements
 
