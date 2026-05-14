@@ -1172,14 +1172,18 @@ The extension can automatically update agent presence in Dynamics 365 based on D
 │                    PRESENCE SYNC FLOW                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  DCA STOPS:                                                             │
+│  DCA NOT RUNNING (Continuous Enforcement):                              │
 │  ┌──────────────┐      ┌────────────────┐      ┌───────────────────┐   │
-│  │  Extension   │ ───► │ CCaaS_Modify   │ ───► │ Agent status =    │   │
-│  │  detects     │      │ AgentPresence  │      │ "Away - DCA Not   │   │
-│  │  DCA stopped │      │ API            │      │ Running"          │   │
+│  │  Every check │ ───► │ CCaaS_Modify   │ ───► │ Agent status =    │   │
+│  │  interval    │      │ AgentPresence  │      │ "Away - DCA Not   │   │
+│  │  (15-60s)    │      │ API            │      │ Running"          │   │
 │  └──────────────┘      └────────────────┘      └───────────────────┘   │
+│         │                                                               │
+│         └── Repeats continuously until DCA starts                      │
+│             (combats D365 overwriting our presence)                    │
 │                                                                         │
-│  RESULT: Agent is unavailable for routing, supervisor sees status      │
+│  RESULT: Agent stays unavailable for routing, even if D365 tries       │
+│          to set them back to "Available"                               │
 │                                                                         │
 │  DCA STARTS:                                                            │
 │  ┌──────────────┐      ┌────────────────┐      ┌───────────────────┐   │
@@ -1189,15 +1193,28 @@ The extension can automatically update agent presence in Dynamics 365 based on D
 │  └──────────────┘      └────────────────┘      └───────────────────┘   │
 │                                                                         │
 │  RESULT: Agent is ready to receive work items again                     │
+│          (only restored once, not continuously enforced)               │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+#### Continuous Enforcement (Like the Warning Banner)
+
+Just as the warning banner stays visible while DCA is not running, the presence sync **continuously re-applies** the "DCA Not Running" status on every check interval. This prevents D365 from overwriting our status:
+
+| DCA Status | Enforcement | Frequency |
+|------------|-------------|-----------|
+| Not Running | **Continuous** | Every check interval (15-60s) |
+| Running | One-time restore | Only when DCA starts |
+
+This design ensures that even in Soft/None enforcement modes, where the page loads before DCA verification, the agent **cannot remain Available** for long.
 
 #### Benefits
 
 | Feature | Benefit |
 |---------|---------|
 | **Automatic routing stop** | No new calls routed to agents without DCA |
+| **Continuous enforcement** | D365 can't overwrite our status |
 | **Supervisor visibility** | "DCA Not Running" status visible in dashboards |
 | **History tracking** | Presence changes logged in `msdyn_agentstatushistory` |
 | **No new tables** | Uses existing D365 presence infrastructure |

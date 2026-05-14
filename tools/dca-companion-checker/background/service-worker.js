@@ -219,6 +219,11 @@ async function performDCACheck(options = {}) {
       await handleStatusChange(previousStatus, currentStatus.isRunning);
     }
     
+    // CONTINUOUS PRESENCE ENFORCEMENT
+    // Like the warning banner that stays visible, keep enforcing presence while DCA is not running
+    // This combats D365 potentially overwriting our presence status
+    await enforcePresenceIfNeeded();
+    
     // Broadcast to all tabs
     broadcastStatus();
     
@@ -228,6 +233,27 @@ async function performDCACheck(options = {}) {
     currentStatus.error = error.message;
     return currentStatus;
   }
+}
+
+// Continuously enforce presence based on DCA status
+// Called on every check interval to ensure D365 doesn't overwrite our presence
+async function enforcePresenceIfNeeded() {
+  const settings = await storageManager.get('settings') || {};
+  
+  // Skip if presence sync is not enabled
+  if (!settings.enablePresenceSync) {
+    return;
+  }
+  
+  if (!currentStatus.isRunning) {
+    // DCA is NOT running - keep enforcing "Away - DCA Not Running" presence
+    if (settings.dcaNotRunningPresenceId) {
+      console.log('[DCA Checker] Enforcing presence: DCA Not Running');
+      await syncPresenceToD365(settings.dcaNotRunningPresenceId, 'DCA Not Running');
+    }
+  }
+  // Note: We only restore "Available" once (on status change), not continuously
+  // This prevents fighting with D365 when the agent intentionally sets a different status
 }
 
 // Perform deep health check
