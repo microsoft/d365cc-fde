@@ -14,190 +14,205 @@
   // This must happen synchronously at document_start
   // ============================================================
   
-  // STOP PAGE LOADING IMMEDIATELY
-  // This is the key - actually stop the browser from loading page content
   const isDynamicsUrl = window.location.hostname.includes('dynamics.com');
-  let pageLoadingStopped = false;
   let immediateBlocker = null;
+  let hideStylesheet = null;
   
   if (isDynamicsUrl) {
-    // Stop all page loading immediately
-    window.stop();
-    pageLoadingStopped = true;
-    console.log('[DCA Checker] Page loading STOPPED at document_start');
+    console.log('[DCA Checker] Dynamics URL detected - blocking page immediately');
     
-    // Replace document with blocker page
-    document.open();
-    document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>DCA Check - Please Wait</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            background: #1a1a2e;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-          }
-          .container {
-            text-align: center;
-            padding: 40px;
-            max-width: 500px;
-          }
-          .icon { font-size: 64px; margin-bottom: 24px; }
-          h1 { font-size: 24px; margin-bottom: 10px; color: #ffd93d; }
-          p { font-size: 16px; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
-          .status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 12px 20px;
-            background: #2d2d44;
-            border-radius: 8px;
-            margin-bottom: 24px;
-          }
-          .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #f59e0b;
-            animation: pulse 2s infinite;
-          }
-          @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-          }
-          .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-          button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-          .launch {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
-          }
-          .launch:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); }
-          .check {
-            background: #374151;
-            color: white;
-          }
-          .check:hover { background: #4b5563; }
-          .help { font-size: 13px; color: #9ca3af; margin-top: 20px; }
-          .help a { color: #60a5fa; text-decoration: none; }
-          .help a:hover { text-decoration: underline; }
-          .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ccc;
-            border-top-color: #4f46e5;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-          }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="icon">🔒</div>
-          <h1>Desktop Companion App Required</h1>
-          <p>Checking if DCA is running before allowing access to D365 Contact Center...</p>
-          <div class="status">
-            <div class="dot"></div>
-            <span id="statusText">Checking DCA status...</span>
-          </div>
-          <div class="actions">
-            <button class="launch" id="launchBtn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              Launch DCA
-            </button>
-            <button class="check" id="checkBtn">
-              <span class="spinner" id="checkSpinner" style="display:none;"></span>
-              <span id="checkText">Check Again</span>
-            </button>
-          </div>
-          <p class="help">
-            Need help? <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" target="_blank">View DCA Documentation</a>
-          </p>
+    // STEP 1: Inject CSS to hide ALL page content immediately
+    // This runs synchronously before any content renders
+    hideStylesheet = document.createElement('style');
+    hideStylesheet.id = 'dca-hide-all';
+    hideStylesheet.textContent = `
+      html > body, html > body * {
+        visibility: hidden !important;
+        opacity: 0 !important;
+      }
+      #dca-blocker-overlay, #dca-blocker-overlay * {
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    `;
+    
+    // Insert style as early as possible
+    (document.head || document.documentElement).appendChild(hideStylesheet);
+    
+    // STEP 2: Create blocker overlay immediately
+    immediateBlocker = document.createElement('div');
+    immediateBlocker.id = 'dca-blocker-overlay';
+    immediateBlocker.innerHTML = `
+      <style>
+        #dca-blocker-overlay {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background: #1a1a2e !important;
+          z-index: 2147483647 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+        #dca-blocker-overlay .dca-container {
+          text-align: center;
+          padding: 40px;
+          max-width: 500px;
+        }
+        #dca-blocker-overlay .dca-icon { font-size: 64px; margin-bottom: 24px; }
+        #dca-blocker-overlay h1 { font-size: 24px; margin-bottom: 10px; color: #ffd93d; }
+        #dca-blocker-overlay p { font-size: 16px; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
+        #dca-blocker-overlay .dca-status {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 12px 20px;
+          background: #2d2d44;
+          border-radius: 8px;
+          margin-bottom: 24px;
+          color: white;
+        }
+        #dca-blocker-overlay .dca-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #f59e0b;
+          animation: dca-pulse 2s infinite;
+        }
+        @keyframes dca-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        }
+        #dca-blocker-overlay .dca-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        #dca-blocker-overlay button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 14px 24px;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        #dca-blocker-overlay .dca-launch {
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          color: white;
+        }
+        #dca-blocker-overlay .dca-launch:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); }
+        #dca-blocker-overlay .dca-check {
+          background: #374151;
+          color: white;
+        }
+        #dca-blocker-overlay .dca-check:hover { background: #4b5563; }
+        #dca-blocker-overlay .dca-help { font-size: 13px; color: #9ca3af; margin-top: 20px; }
+        #dca-blocker-overlay .dca-help a { color: #60a5fa; text-decoration: none; }
+      </style>
+      <div class="dca-container">
+        <div class="dca-icon">🔒</div>
+        <h1>Desktop Companion App Required</h1>
+        <p>Checking if DCA is running before allowing access to D365 Contact Center...</p>
+        <div class="dca-status">
+          <div class="dca-dot" id="dcaBlockerDot"></div>
+          <span id="dcaBlockerStatus">Checking DCA status...</span>
         </div>
-        <script>
-          // Store original URL to redirect when DCA is confirmed
-          const originalUrl = '${window.location.href.replace(/'/g, "\\'")}';
-          
-          // Check DCA status via extension messaging
-          async function checkDCA() {
-            document.getElementById('checkSpinner').style.display = 'inline-block';
-            document.getElementById('checkText').textContent = 'Checking...';
-            
-            try {
-              const response = await chrome.runtime.sendMessage({ type: 'CHECK_NOW', options: { deep: true } });
-              if (response && response.isRunning) {
-                document.getElementById('statusText').textContent = 'DCA is running! Redirecting...';
-                document.querySelector('.dot').style.background = '#10b981';
-                // Redirect to original URL
-                setTimeout(() => {
-                  window.location.href = originalUrl;
-                }, 500);
-              } else {
-                document.getElementById('statusText').textContent = 'DCA not detected - please start DCA';
-                document.querySelector('.dot').style.background = '#ef4444';
-              }
-            } catch (e) {
-              document.getElementById('statusText').textContent = 'Unable to check - click Check Again';
-            }
-            
-            document.getElementById('checkSpinner').style.display = 'none';
-            document.getElementById('checkText').textContent = 'Check Again';
-          }
-          
-          // Launch DCA
-          async function launchDCA() {
-            try {
-              await chrome.runtime.sendMessage({ type: 'LAUNCH_DCA' });
-              document.getElementById('statusText').textContent = 'Launching DCA...';
-              // Check after delay
-              setTimeout(checkDCA, 2000);
-            } catch (e) {
-              document.getElementById('statusText').textContent = 'Launch failed - start DCA manually';
-            }
-          }
-          
-          document.getElementById('launchBtn').addEventListener('click', launchDCA);
-          document.getElementById('checkBtn').addEventListener('click', checkDCA);
-          
-          // Auto-check on load
-          setTimeout(checkDCA, 500);
-          
-          // Poll every 3 seconds
-          setInterval(checkDCA, 3000);
-        </script>
-      </body>
-      </html>
-    `);
-    document.close();
+        <div class="dca-actions">
+          <button class="dca-launch" id="dcaBlockerLaunch">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Launch DCA
+          </button>
+          <button class="dca-check" id="dcaBlockerCheck">
+            Check Again
+          </button>
+        </div>
+        <p class="dca-help">
+          Need help? <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" target="_blank">View DCA Documentation</a>
+        </p>
+      </div>
+    `;
+    
+    // Insert blocker into document as soon as possible
+    const insertBlocker = () => {
+      if (document.body) {
+        document.body.appendChild(immediateBlocker);
+        setupBlockerButtons();
+      } else if (document.documentElement) {
+        document.documentElement.appendChild(immediateBlocker);
+        setupBlockerButtons();
+      } else {
+        // Wait for document to be ready
+        setTimeout(insertBlocker, 10);
+      }
+    };
+    insertBlocker();
+    
+    console.log('[DCA Checker] Blocker overlay injected');
   }
-
-  // If we stopped the page, the rest of this script won't run on the original page
-  // It will run on our blocking page instead, so we need to exit early
-  if (pageLoadingStopped) {
-    console.log('[DCA Checker] Running on blocking page - original page loading prevented');
-    return; // Exit - the blocking page handles everything
+  
+  // Setup blocker button handlers
+  function setupBlockerButtons() {
+    const launchBtn = document.getElementById('dcaBlockerLaunch');
+    const checkBtn = document.getElementById('dcaBlockerCheck');
+    
+    if (launchBtn) {
+      launchBtn.addEventListener('click', async () => {
+        try {
+          await chrome.runtime.sendMessage({ type: 'LAUNCH_DCA' });
+          updateBlockerStatus('Launching DCA...', '#f59e0b');
+          setTimeout(checkDCAStatus, 2000);
+        } catch (e) {
+          updateBlockerStatus('Launch failed - start DCA manually', '#ef4444');
+        }
+      });
+    }
+    
+    if (checkBtn) {
+      checkBtn.addEventListener('click', checkDCAStatus);
+    }
+    
+    // Auto-check immediately and poll
+    setTimeout(checkDCAStatus, 100);
+    setInterval(checkDCAStatus, 3000);
+  }
+  
+  // Check DCA status and update blocker
+  async function checkDCAStatus() {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'CHECK_NOW', options: { deep: true } });
+      if (response && response.isRunning) {
+        updateBlockerStatus('DCA is running! Loading page...', '#10b981');
+        // Remove blocker and show page
+        setTimeout(removeBlocker, 500);
+      } else {
+        updateBlockerStatus('DCA not detected - please start DCA', '#ef4444');
+      }
+    } catch (e) {
+      updateBlockerStatus('Checking...', '#f59e0b');
+    }
+  }
+  
+  // Update blocker status display
+  function updateBlockerStatus(text, dotColor) {
+    const statusEl = document.getElementById('dcaBlockerStatus');
+    const dotEl = document.getElementById('dcaBlockerDot');
+    if (statusEl) statusEl.textContent = text;
+    if (dotEl) dotEl.style.background = dotColor;
+  }
+  
+  // Remove blocker and show page
+  function removeBlocker() {
+    const blocker = document.getElementById('dca-blocker-overlay');
+    const hideStyle = document.getElementById('dca-hide-all');
+    if (blocker) blocker.remove();
+    if (hideStyle) hideStyle.remove();
+    console.log('[DCA Checker] Blocker removed - page now visible');
   }
 
   const DCA_CHECKER = {
@@ -208,8 +223,7 @@
     isVoicePage: false,
     isTargetUrl: false,
     pollInterval: null,
-    pageBlocked: false,
-    immediateBlocker: immediateBlocker,
+    pageBlocked: isDynamicsUrl, // Start blocked if on dynamics URL
 
     /**
      * Initialize the content script
@@ -226,24 +240,19 @@
       // Check if this is a voice-related page
       this.isVoicePage = this.detectVoicePage();
 
-      // If NOT target URL or NOT strict mode, remove immediate blocker
-      if (this.immediateBlocker && (!this.isTargetUrl || this.settings.enforcementLevel !== 'strict')) {
+      // If NOT target URL or NOT strict mode, remove the blocker
+      if (!this.isTargetUrl || this.settings.enforcementLevel !== 'strict') {
         console.log('[DCA Checker] Not target URL or not strict mode - removing blocker');
-        this.immediateBlocker.remove();
-        this.immediateBlocker = null;
+        removeBlocker();
+        this.pageBlocked = false;
       }
-
-      // If this is the target URL and strict mode, keep blocking (upgrade blocker to full modal)
-      if (this.isTargetUrl && this.settings.enforcementLevel === 'strict') {
-        console.log('[DCA Checker] Target URL detected with STRICT mode - checking DCA before allowing page');
-        // Show full blocking modal (replaces immediate blocker)
-        this.showBlockingModal();
-        this.pageBlocked = true;
-      }
+      // If strict mode on target URL, the blocker stays (handled by top-level code)
       
-      // Create UI elements
-      this.createIndicator();
-      this.createPanel();
+      // Create UI elements (only if blocker is not showing)
+      if (!this.pageBlocked) {
+        this.createIndicator();
+        this.createPanel();
+      }
       
       // Request initial status - this will update the blocking modal if DCA is running
       await this.requestStatus();
@@ -256,11 +265,13 @@
         return true;
       });
 
-      // Observe DOM changes for voice elements
-      this.observeDOMChanges();
-      
-      // Check for voice elements periodically
-      this.startPolling();
+      // Observe DOM changes for voice elements (only if not blocked)
+      if (!this.pageBlocked) {
+        this.observeDOMChanges();
+        
+        // Check for voice elements periodically
+        this.startPolling();
+      }
       
       console.log('[DCA Checker] Content script initialized');
     },
@@ -584,13 +595,10 @@
      * Show full-screen blocking modal
      */
     showBlockingModal() {
-      // Remove immediate blocker if present (we're upgrading to full modal)
-      if (this.immediateBlocker) {
-        this.immediateBlocker.remove();
-        this.immediateBlocker = null;
-      }
-      const existingBlocker = document.getElementById('dca-immediate-blocker');
-      if (existingBlocker) existingBlocker.remove();
+      // Use the top-level blocker - it's already shown if we're on dynamics.com
+      // This method is now mainly for non-strict modes
+      const existingBlocker = document.getElementById('dca-blocker-overlay');
+      if (existingBlocker) return; // Already showing
 
       if (document.querySelector('.dca-blocking-modal')) return;
 
@@ -661,13 +669,9 @@
       if (modal) {
         modal.remove();
       }
-      // Also remove immediate blocker if still present
-      if (this.immediateBlocker) {
-        this.immediateBlocker.remove();
-        this.immediateBlocker = null;
-      }
-      const existingBlocker = document.getElementById('dca-immediate-blocker');
-      if (existingBlocker) existingBlocker.remove();
+      // Also remove the top-level blocker
+      removeBlocker();
+      this.pageBlocked = false;
     },
 
     /**
