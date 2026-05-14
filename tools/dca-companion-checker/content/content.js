@@ -556,8 +556,6 @@
         } else {
           banner.querySelector('.dca-banner-dismiss').addEventListener('click', () => {
             banner.classList.add('dismissed');
-            // Remove body padding when dismissed
-            document.body.classList.remove('dca-banner-visible');
           });
         }
         
@@ -565,8 +563,6 @@
       }
       
       banner.classList.remove('hidden', 'dismissed');
-      // Push page content down
-      document.body.classList.add('dca-banner-visible');
     },
 
     /**
@@ -598,8 +594,6 @@
       if (banner) {
         banner.classList.add('hidden');
       }
-      // Remove body padding
-      document.body.classList.remove('dca-banner-visible');
     },
 
     /**

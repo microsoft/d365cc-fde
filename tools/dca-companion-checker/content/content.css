@@ -284,10 +284,10 @@
   line-height: 1.4;
 }
 
-/* Warning Banner - Compact design that pushes content down */
+/* Warning Banner - Compact design positioned below D365 shell header */
 .dca-warning-banner {
   position: fixed;
-  top: 0;
+  top: 48px; /* Position below D365's shell header (typically ~48px) */
   left: 0;
   right: 0;
   z-index: 999997;
@@ -299,21 +299,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Push page content down when banner is visible */
-body.dca-banner-visible {
-  padding-top: 52px !important; /* Height of banner + some buffer */
-}
+/* No need to push body content - banner sits below D365 header */
+/* D365's own layout handles the content positioning */
 
 .dca-warning-banner.hidden,
 .dca-warning-banner.dismissed {
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
-}
-
-/* When banner is hidden, remove body padding */
-body:not(.dca-banner-visible) {
-  padding-top: 0 !important;
 }
 
 .dca-banner-content {
@@ -423,11 +416,6 @@ body:not(.dca-banner-visible) {
   .dca-banner-actions {
     justify-content: center;
     width: 100%;
-  }
-  
-  /* Increase body padding for taller banner */
-  body.dca-banner-visible {
-    padding-top: 80px !important;
   }
 }
 
