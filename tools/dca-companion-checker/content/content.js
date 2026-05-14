@@ -3,6 +3,7 @@
  * Content Script
  * 
  * Injects visual indicators and monitoring into D365 Contact Center pages
+ * MOST IMPORTANT: Blocks page load until DCA is verified running (in strict mode)
  */
 
 (function() {
@@ -14,7 +15,9 @@
     panel: null,
     settings: null,
     isVoicePage: false,
+    isTargetUrl: false,
     pollInterval: null,
+    pageBlocked: false,
 
     /**
      * Initialize the content script
@@ -22,17 +25,28 @@
     async init() {
       console.log('[DCA Checker] Initializing content script');
       
-      // Load settings
+      // Load settings FIRST
       this.settings = await this.getSettings();
+      
+      // Check if this is the target D365 URL
+      this.isTargetUrl = this.checkTargetUrl();
       
       // Check if this is a voice-related page
       this.isVoicePage = this.detectVoicePage();
+
+      // If this is the target URL and strict mode, BLOCK IMMEDIATELY
+      if (this.isTargetUrl && this.settings.enforcementLevel === 'strict') {
+        console.log('[DCA Checker] Target URL detected with STRICT mode - checking DCA before allowing page');
+        // Show blocking overlay immediately
+        this.showBlockingModal();
+        this.pageBlocked = true;
+      }
       
       // Create UI elements
       this.createIndicator();
       this.createPanel();
       
-      // Request initial status
+      // Request initial status - this will update the blocking modal if DCA is running
       await this.requestStatus();
       
       // Listen for messages from background
@@ -50,6 +64,26 @@
       this.startPolling();
       
       console.log('[DCA Checker] Content script initialized');
+    },
+
+    /**
+     * Check if current URL matches the target D365 URL
+     */
+    checkTargetUrl() {
+      const currentUrl = window.location.href.toLowerCase();
+      const targetUrl = (this.settings.d365Url || '').toLowerCase();
+      
+      if (!targetUrl) return true; // If no target set, apply to all D365 pages
+      
+      // Extract domain from target URL
+      try {
+        const targetDomain = new URL(targetUrl).hostname;
+        const currentDomain = window.location.hostname;
+        return currentDomain.includes(targetDomain) || targetDomain.includes(currentDomain);
+      } catch (e) {
+        // If URL parsing fails, do simple string match
+        return currentUrl.includes(targetUrl.replace('https://', '').replace('http://', ''));
+      }
     },
 
     /**
@@ -72,10 +106,11 @@
         showPageIndicator: true,
         showWarningBanner: true,
         indicatorPosition: 'bottom-right',
-        // Enforcement defaults
-        enforcementLevel: 'soft',
-        blockPresenceChange: false,
-        showBlockingModal: false,
+        // Enforcement defaults - STRICT BY DEFAULT
+        d365Url: 'https://adatum.crm.dynamics.com/',
+        enforcementLevel: 'strict',
+        blockPresenceChange: true,
+        showBlockingModal: true,
         requireAcknowledgment: true,
         logNonCompliance: true,
         autoLaunchDCA: false
@@ -305,6 +340,12 @@
       this._autoLaunchAttempted = false;
       this.hideBlockingModal();
       this.restorePresenceChanges();
+      
+      // Unblock the page
+      if (this.pageBlocked) {
+        console.log('[DCA Checker] DCA is now running - unblocking page');
+        this.pageBlocked = false;
+      }
     },
 
     /**

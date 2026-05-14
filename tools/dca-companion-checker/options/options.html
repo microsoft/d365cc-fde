@@ -117,12 +117,25 @@
         </div>
       </section>
 
-      <!-- Enforcement Mode - NEW! -->
+      <!-- Enforcement Mode -->
       <section class="settings-section">
         <h2 class="section-title">Enforcement Mode</h2>
         <p class="section-description">
           Control how strictly the extension enforces DCA requirements. These settings determine what happens when agents try to work without DCA running.
         </p>
+
+        <div class="setting-item" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px;">
+          <div class="setting-info">
+            <label class="setting-label" for="d365Url">D365 Contact Center URL</label>
+            <p class="setting-description"><strong>IMPORTANT:</strong> Your organization's D365 Contact Center URL. The extension will block this page from loading until DCA is running (in Strict mode).</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="d365Url" class="text-input" 
+                   value="https://adatum.crm.dynamics.com/" 
+                   placeholder="https://yourorg.crm.dynamics.com/"
+                   style="width: 100%; min-width: 300px;">
+          </div>
+        </div>
         
         <div class="setting-item">
           <div class="setting-info">
@@ -132,8 +145,8 @@
           <div class="setting-control">
             <select id="enforcementLevel" class="select-input">
               <option value="none">None - Warn only</option>
-              <option value="soft" selected>Soft - Warn + require acknowledgment</option>
-              <option value="strict">Strict - Block until DCA running</option>
+              <option value="soft">Soft - Warn + require acknowledgment</option>
+              <option value="strict" selected>Strict - Block page until DCA running</option>
             </select>
           </div>
         </div>
@@ -145,7 +158,7 @@
           </div>
           <div class="setting-control">
             <label class="toggle">
-              <input type="checkbox" id="blockPresenceChange">
+              <input type="checkbox" id="blockPresenceChange" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>

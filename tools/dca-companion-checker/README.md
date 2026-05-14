@@ -767,15 +767,18 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 | Show Page Indicator | On/Off | On |
 | Indicator Position | Bottom Right, Bottom Left, Top Right, Top Left | Bottom Right |
 
-**🔒 Enforcement Mode Settings:**
+**🔒 Enforcement Mode Settings (MOST IMPORTANT):**
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Enforcement Level | None (warn) / Soft (require ack) / Strict (block) | Soft |
-| Block Presence Change | Prevent "Available" status without DCA | Off |
-| Show Blocking Modal | Full-screen modal until DCA running | Off |
+| **D365 Contact Center URL** | **YOUR ORG'S URL - extension blocks this page until DCA running** | **https://adatum.crm.dynamics.com/** |
+| Enforcement Level | None (warn) / Soft (require ack) / **Strict (block page)** | **Strict** |
+| Block Presence Change | Prevent "Available" status without DCA | **On** |
+| Show Blocking Modal | Full-screen modal until DCA running | **On** |
 | Require Acknowledgment | Agent must click "I understand" to dismiss warning | On |
 | Log Non-Compliance | Record when agents work without DCA | On |
 | Auto-Launch DCA | Automatically try to start DCA | Off |
+
+> **⚠️ IMPORTANT:** Change the D365 URL to your organization's actual URL (e.g., `https://yourorg.crm.dynamics.com/`). This is the page that will be blocked until DCA is verified running.
 
 **🔧 Detection Settings (Configurable):**
 | Setting | Description | Default |
