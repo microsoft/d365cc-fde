@@ -41,6 +41,11 @@ let cachedSettings = {
 // Set to track tabs that have been allowed (DCA was verified for them)
 const allowedTabs = new Set();
 
+// Flag to track if agent has acknowledged the risk (Soft mode)
+// When true, we don't enforce "DCA Not Running" presence
+// Gets reset when DCA starts (acknowledgment no longer needed)
+let riskAcknowledged = false;
+
 // Check if URL matches dynamics.com pattern
 function isDynamicsUrl(url) {
   try {
@@ -245,6 +250,13 @@ async function enforcePresenceIfNeeded() {
     return;
   }
   
+  // Skip if agent has acknowledged the risk (Soft mode)
+  // They chose to work without DCA - respect their decision
+  if (riskAcknowledged) {
+    console.log('[DCA Checker] Skipping presence enforcement - risk acknowledged by agent');
+    return;
+  }
+  
   if (!currentStatus.isRunning) {
     // DCA is NOT running - enforce "Away - DCA Not Running" presence
     // BUT: Only set if current presence is NOT already "DCA Not Running"
@@ -287,6 +299,12 @@ async function handleStatusChange(wasRunning, isRunning) {
   } else if (isRunning && !wasRunning) {
     // DCA started
     console.log('[DCA Checker] DCA started running');
+    
+    // Reset risk acknowledgment - no longer needed since DCA is running
+    if (riskAcknowledged) {
+      console.log('[DCA Checker] Clearing risk acknowledgment - DCA is now running');
+      riskAcknowledged = false;
+    }
     
     if (settings.notifyOnStart !== false) {
       await notificationManager.show({
@@ -421,6 +439,33 @@ async function handleMessage(message, sender) {
       if (history.length > 100) history.shift();
       await storageManager.set('nonComplianceHistory', history);
       return { success: true };
+    
+    case 'ACKNOWLEDGE_RISK':
+      // Agent clicked "I Understand the Risk" - respect their choice
+      console.log('[DCA Checker] Agent acknowledged risk - stopping presence enforcement');
+      riskAcknowledged = true;
+      
+      // Log the acknowledgment for compliance
+      const ackHistory = await storageManager.get('nonComplianceHistory') || [];
+      ackHistory.push({
+        type: 'ACKNOWLEDGED_RISK',
+        timestamp: new Date().toISOString(),
+        url: message.url || 'unknown'
+      });
+      if (ackHistory.length > 100) ackHistory.shift();
+      await storageManager.set('nonComplianceHistory', ackHistory);
+      
+      // Restore "Available" presence since agent chose to accept the risk
+      const ackSettings = await storageManager.get('settings') || {};
+      if (ackSettings.enablePresenceSync) {
+        const availablePresenceId = ackSettings.availablePresenceId || null;
+        if (availablePresenceId) {
+          console.log('[DCA Checker] Restoring Available presence after risk acknowledgment');
+          await syncPresenceToD365(availablePresenceId, 'Available');
+        }
+      }
+      
+      return { success: true, riskAcknowledged: true };
     
     default:
       console.warn('[DCA Checker] Unknown message type:', message.type);

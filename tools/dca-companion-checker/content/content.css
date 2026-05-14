@@ -284,7 +284,7 @@
   line-height: 1.4;
 }
 
-/* Warning Banner */
+/* Warning Banner - Compact design that pushes content down */
 .dca-warning-banner {
   position: fixed;
   top: 0;
@@ -296,6 +296,12 @@
   padding: 0;
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Push page content down when banner is visible */
+body.dca-banner-visible {
+  padding-top: 52px !important; /* Height of banner + some buffer */
 }
 
 .dca-warning-banner.hidden,
@@ -305,44 +311,51 @@
   pointer-events: none;
 }
 
+/* When banner is hidden, remove body padding */
+body:not(.dca-banner-visible) {
+  padding-top: 0 !important;
+}
+
 .dca-banner-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 12px 24px;
-  max-width: 1400px;
+  gap: 12px;
+  padding: 8px 16px;
+  max-width: 100%;
   margin: 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .dca-banner-icon {
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .dca-banner-text {
-  font-size: 14px;
+  font-size: 13px;
   color: #78350f;
-  flex: 1;
-  min-width: 200px;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dca-banner-text strong {
-  display: block;
-  margin-bottom: 2px;
+  display: inline;
+  margin-right: 4px;
 }
 
 .dca-banner-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .dca-banner-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   border: none;
@@ -367,6 +380,23 @@
   background: #b91c1c;
 }
 
+.dca-banner-acknowledge.acknowledged {
+  background: #6b7280;
+  color: white;
+  cursor: default;
+  opacity: 0.8;
+}
+
+.dca-banner-acknowledge.acknowledged:hover {
+  background: #6b7280;
+}
+
+/* Risk acknowledged - subtle indicator that agent chose to proceed */
+.dca-warning-banner.risk-acknowledged {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-bottom: 3px solid #b45309;
+}
+
 .dca-banner-dismiss {
   background: rgba(0, 0, 0, 0.1);
   color: #78350f;
@@ -377,11 +407,40 @@
 }
 
 /* Responsive Adjustments */
+@media (max-width: 768px) {
+  /* Allow banner content to wrap on smaller screens */
+  .dca-banner-content {
+    flex-wrap: wrap;
+    text-align: center;
+  }
+  
+  .dca-banner-text {
+    white-space: normal;
+    flex: 1 1 100%;
+    margin-bottom: 8px;
+  }
+  
+  .dca-banner-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  /* Increase body padding for taller banner */
+  body.dca-banner-visible {
+    padding-top: 80px !important;
+  }
+}
+
 @media (max-width: 400px) {
   .dca-status-panel {
     width: calc(100vw - 40px);
     left: 20px !important;
     right: 20px !important;
+  }
+  
+  .dca-banner-btn {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
 

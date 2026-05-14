@@ -1250,6 +1250,41 @@ This design ensures:
 | **No new tables** | Uses existing D365 presence infrastructure |
 | **Self-healing** | Catches D365 overwrites on next check interval |
 
+#### "I Understand the Risk" Integration (Soft Mode)
+
+When an agent clicks "I Understand the Risk" on the warning banner, the extension **respects their choice** while keeping the warning visible:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SOFT MODE + PRESENCE SYNC                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Agent sees banner → Clicks "I Understand the Risk"                    │
+│                                                                         │
+│  Extension:                                                             │
+│    1. ✅ KEEPS banner visible (constant reminder)                      │
+│    2. ✅ Changes button to "✓ Risk Acknowledged" (disabled)            │
+│    3. ✅ Logs acknowledgment for compliance                            │
+│    4. ✅ STOPS presence enforcement                                     │
+│    5. ✅ Restores "Available" presence (if configured)                 │
+│                                                                         │
+│  Result: Agent can work without DCA, but sees constant reminder        │
+│          They can still click "Launch DCA" anytime                     │
+│                                                                         │
+│  When DCA starts again:                                                │
+│    → Banner hides (DCA running, no warning needed)                     │
+│    → Risk acknowledgment flag is reset                                  │
+│    → Presence enforcement resumes for next time DCA stops              │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+| Mode | Banner After Ack | Presence Enforcement | Agent Choice |
+|------|------------------|---------------------|--------------|
+| **Strict** | N/A (page blocked) | Always enforced | No choice |
+| **Soft** | **Stays visible** | Stops after acknowledgment | Agent's risk |
+| **None** | Dismissed | No enforcement | Agent works freely |
+
 #### Requirements
 
 - Agent must be logged into D365 Contact Center (active session)

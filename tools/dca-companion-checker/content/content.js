@@ -542,13 +542,22 @@
         });
         
         if (requiresAcknowledgment) {
-          banner.querySelector('.dca-banner-acknowledge').addEventListener('click', () => {
+          banner.querySelector('.dca-banner-acknowledge').addEventListener('click', (e) => {
             this.logAcknowledgment();
-            banner.classList.add('dismissed');
+            // Don't dismiss - keep banner visible as a reminder
+            // Change button to show acknowledged state
+            const btn = e.target;
+            btn.textContent = '✓ Risk Acknowledged';
+            btn.disabled = true;
+            btn.classList.add('acknowledged');
+            // Add acknowledged class to banner for potential styling
+            banner.classList.add('risk-acknowledged');
           });
         } else {
           banner.querySelector('.dca-banner-dismiss').addEventListener('click', () => {
             banner.classList.add('dismissed');
+            // Remove body padding when dismissed
+            document.body.classList.remove('dca-banner-visible');
           });
         }
         
@@ -556,26 +565,28 @@
       }
       
       banner.classList.remove('hidden', 'dismissed');
+      // Push page content down
+      document.body.classList.add('dca-banner-visible');
     },
 
     /**
-     * Log acknowledgment for compliance
+     * Handle risk acknowledgment - tells background to stop presence enforcement
+     * and logs the acknowledgment for compliance
      */
     async logAcknowledgment() {
-      if (this.settings.logNonCompliance) {
-        try {
-          await chrome.runtime.sendMessage({
-            type: 'LOG_NON_COMPLIANCE',
-            event: {
-              type: 'ACKNOWLEDGED_RISK',
-              timestamp: new Date().toISOString(),
-              url: window.location.href
-            }
-          });
-          console.log('[DCA Checker] Risk acknowledgment logged');
-        } catch (error) {
-          console.error('[DCA Checker] Failed to log acknowledgment:', error);
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: 'ACKNOWLEDGE_RISK',
+          url: window.location.href
+        });
+        
+        if (response?.success) {
+          console.log('[DCA Checker] Risk acknowledged - presence enforcement stopped');
+        } else {
+          console.warn('[DCA Checker] Risk acknowledgment response:', response);
         }
+      } catch (error) {
+        console.error('[DCA Checker] Failed to acknowledge risk:', error);
       }
     },
 
@@ -587,6 +598,8 @@
       if (banner) {
         banner.classList.add('hidden');
       }
+      // Remove body padding
+      document.body.classList.remove('dca-banner-visible');
     },
 
     /**
