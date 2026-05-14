@@ -284,23 +284,39 @@
   line-height: 1.4;
 }
 
-/* Warning Banner - Compact design positioned below D365 shell header */
+/* Warning Banner - At very top, pushes D365 application down */
 .dca-warning-banner {
   position: fixed;
-  top: 48px; /* Position below D365's shell header (typically ~48px) */
+  top: 0;
   left: 0;
   right: 0;
-  z-index: 999997;
+  height: 36px; /* Fixed height for consistent offset */
+  z-index: 2147483647; /* Maximum z-index to stay above everything */
   background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
   border-bottom: 2px solid #f59e0b;
   padding: 0;
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* No need to push body content - banner sits below D365 header */
-/* D365's own layout handles the content positioning */
+/* Push D365's shell container down when banner is visible */
+/* Target common D365 shell elements */
+body.dca-banner-active #shell-container,
+body.dca-banner-active #mainContent,
+body.dca-banner-active .pa-shell,
+body.dca-banner-active [data-id="shell-container"],
+body.dca-banner-active .shell-container {
+  margin-top: 38px !important; /* Banner height + border */
+}
+
+/* Also offset any fixed positioned D365 headers */
+body.dca-banner-active #shellHeaderBar,
+body.dca-banner-active .pa-shell-header,
+body.dca-banner-active [data-id="shell-header"],
+body.dca-banner-active .shell-header {
+  top: 38px !important;
+}
 
 .dca-warning-banner.hidden,
 .dca-warning-banner.dismissed {
@@ -309,15 +325,22 @@
   pointer-events: none;
 }
 
+/* Remove margin when banner is hidden */
+body:not(.dca-banner-active) #shell-container,
+body:not(.dca-banner-active) #mainContent {
+  margin-top: 0 !important;
+}
+
 .dca-banner-content {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 6px 16px;
   max-width: 100%;
   margin: 0 auto;
   flex-wrap: nowrap;
+  height: 100%;
 }
 
 .dca-banner-icon {

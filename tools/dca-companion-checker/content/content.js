@@ -556,6 +556,8 @@
         } else {
           banner.querySelector('.dca-banner-dismiss').addEventListener('click', () => {
             banner.classList.add('dismissed');
+            // Remove body class so D365 shell returns to normal position
+            document.body.classList.remove('dca-banner-active');
           });
         }
         
@@ -563,6 +565,8 @@
       }
       
       banner.classList.remove('hidden', 'dismissed');
+      // Add body class to push D365 shell down
+      document.body.classList.add('dca-banner-active');
     },
 
     /**
@@ -594,6 +598,8 @@
       if (banner) {
         banner.classList.add('hidden');
       }
+      // Remove body class so D365 shell returns to normal position
+      document.body.classList.remove('dca-banner-active');
     },
 
     /**
