@@ -148,10 +148,23 @@
           </div>
           <div class="setting-control">
             <select id="enforcementLevel" class="select-input">
-              <option value="none">None - Warn only</option>
-              <option value="soft">Soft - Warn + require acknowledgment</option>
-              <option value="strict" selected>Strict - Block page until DCA running</option>
+              <option value="none">None - Show warning banner only</option>
+              <option value="soft">Soft - Warning + require acknowledgment</option>
+              <option value="strict" selected>Strict - Block page until DCA is running</option>
             </select>
+          </div>
+        </div>
+        
+        <!-- Enforcement level descriptions -->
+        <div class="enforcement-info" id="enforcementInfo">
+          <div class="enforcement-level none">
+            <strong>None:</strong> Shows a warning banner at the top of the page. Agent can dismiss it and continue working.
+          </div>
+          <div class="enforcement-level soft">
+            <strong>Soft:</strong> Shows a warning banner that requires clicking "I understand the risk" before it can be dismissed.
+          </div>
+          <div class="enforcement-level strict">
+            <strong>Strict:</strong> Completely blocks the page from loading until DCA is verified running. Agent cannot access D365 without DCA.
           </div>
         </div>
 
@@ -163,32 +176,6 @@
           <div class="setting-control">
             <label class="toggle">
               <input type="checkbox" id="blockPresenceChange" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label" for="showBlockingModal">Show Blocking Modal</label>
-            <p class="setting-description">Display a full-screen modal that cannot be dismissed until DCA is running</p>
-          </div>
-          <div class="setting-control">
-            <label class="toggle">
-              <input type="checkbox" id="showBlockingModal">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label" for="requireAcknowledgment">Require Acknowledgment</label>
-            <p class="setting-description">Agent must click "I understand the risk" to dismiss warning banner</p>
-          </div>
-          <div class="setting-control">
-            <label class="toggle">
-              <input type="checkbox" id="requireAcknowledgment" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>

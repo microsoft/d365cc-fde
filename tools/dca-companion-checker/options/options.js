@@ -31,9 +31,8 @@ class OptionsController {
       // Enforcement Mode
       d365Url: document.getElementById('d365Url'),
       enforcementLevel: document.getElementById('enforcementLevel'),
+      enforcementInfo: document.getElementById('enforcementInfo'),
       blockPresenceChange: document.getElementById('blockPresenceChange'),
-      showBlockingModal: document.getElementById('showBlockingModal'),
-      requireAcknowledgment: document.getElementById('requireAcknowledgment'),
       logNonCompliance: document.getElementById('logNonCompliance'),
       autoLaunchDCA: document.getElementById('autoLaunchDCA'),
       // Detection
@@ -78,6 +77,7 @@ class OptionsController {
       d365Url: '*.crm.dynamics.com',
       enforcementLevel: 'strict',
       blockPresenceChange: true,
+      // These are derived from enforcementLevel but included for backwards compatibility
       showBlockingModal: true,
       requireAcknowledgment: true,
       logNonCompliance: true,
@@ -97,8 +97,8 @@ class OptionsController {
     const { 
       checkInterval, notifyOnStop, notifyOnStart, 
       showBadge, showPageIndicator, indicatorPosition,
-      d365Url, enforcementLevel, blockPresenceChange, showBlockingModal,
-      requireAcknowledgment, logNonCompliance, autoLaunchDCA,
+      d365Url, enforcementLevel, blockPresenceChange,
+      logNonCompliance, autoLaunchDCA,
       dcaProcessName, dcaDisplayName, dcaPath,
       ports, protocolHandlers, detectionTimeout
     } = this.settings;
@@ -116,8 +116,6 @@ class OptionsController {
     this.elements.d365Url.value = d365Url || '*.crm.dynamics.com';
     this.elements.enforcementLevel.value = enforcementLevel || 'strict';
     this.elements.blockPresenceChange.checked = blockPresenceChange !== false;
-    this.elements.showBlockingModal.checked = showBlockingModal !== false;
-    this.elements.requireAcknowledgment.checked = requireAcknowledgment !== false;
     this.elements.logNonCompliance.checked = logNonCompliance !== false;
     this.elements.autoLaunchDCA.checked = autoLaunchDCA === true;
     // Detection
@@ -127,15 +125,47 @@ class OptionsController {
     this.elements.ports.value = (ports || []).join(', ');
     this.elements.protocols.value = (protocolHandlers || []).join(', ');
     this.elements.detectionTimeout.value = detectionTimeout || 2000;
+    
+    // Show enforcement level description
+    this.updateEnforcementInfo();
+  }
+
+  updateEnforcementInfo() {
+    const level = this.elements.enforcementLevel.value;
+    const infoBox = this.elements.enforcementInfo;
+    if (infoBox) {
+      // Hide all
+      infoBox.querySelectorAll('.enforcement-level').forEach(el => el.classList.remove('active'));
+      // Show selected
+      const activeEl = infoBox.querySelector(`.enforcement-level.${level}`);
+      if (activeEl) activeEl.classList.add('active');
+    }
   }
 
   attachEventListeners() {
     this.elements.saveBtn.addEventListener('click', () => this.saveSettings());
     this.elements.resetBtn.addEventListener('click', () => this.resetSettings());
     this.elements.setupNativeBtn.addEventListener('click', () => this.setupNativeHost());
+    this.elements.enforcementLevel.addEventListener('change', () => this.updateEnforcementInfo());
+  }
+
+  // Derive showBlockingModal and requireAcknowledgment from enforcement level
+  getEnforcementFlags(level) {
+    switch (level) {
+      case 'strict':
+        return { showBlockingModal: true, requireAcknowledgment: true };
+      case 'soft':
+        return { showBlockingModal: false, requireAcknowledgment: true };
+      case 'none':
+      default:
+        return { showBlockingModal: false, requireAcknowledgment: false };
+    }
   }
 
   collectFormData() {
+    const enforcementLevel = this.elements.enforcementLevel.value;
+    const enforcementFlags = this.getEnforcementFlags(enforcementLevel);
+    
     return {
       // General
       checkInterval: parseInt(this.elements.checkInterval.value, 10),
@@ -148,10 +178,11 @@ class OptionsController {
       indicatorPosition: this.elements.indicatorPosition.value,
       // Enforcement Mode
       d365Url: this.elements.d365Url.value.trim() || '*.crm.dynamics.com',
-      enforcementLevel: this.elements.enforcementLevel.value,
+      enforcementLevel: enforcementLevel,
       blockPresenceChange: this.elements.blockPresenceChange.checked,
-      showBlockingModal: this.elements.showBlockingModal.checked,
-      requireAcknowledgment: this.elements.requireAcknowledgment.checked,
+      // Derived from enforcement level (no separate toggles)
+      showBlockingModal: enforcementFlags.showBlockingModal,
+      requireAcknowledgment: enforcementFlags.requireAcknowledgment,
       logNonCompliance: this.elements.logNonCompliance.checked,
       autoLaunchDCA: this.elements.autoLaunchDCA.checked,
       // Detection - DCA Configuration

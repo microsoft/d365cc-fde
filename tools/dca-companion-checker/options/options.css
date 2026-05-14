@@ -175,6 +175,34 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
 }
 
+/* Enforcement Level Info */
+.enforcement-info {
+  background: #f8f9fa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0 16px 0;
+}
+
+.enforcement-level {
+  display: none;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.enforcement-level.active {
+  display: block;
+}
+
+.enforcement-level strong {
+  color: #1a1a1a;
+}
+
+.enforcement-level.none strong { color: #666; }
+.enforcement-level.soft strong { color: #d97706; }
+.enforcement-level.strict strong { color: #dc2626; }
+
 /* Text Input */
 .text-input {
   padding: 14px 16px;

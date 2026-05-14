@@ -201,19 +201,80 @@ The frustrating part? **DCA installation isn't the problem**. Most organizations
 
 | Capability | Description |
 |------------|-------------|
+| **🚫 Navigation Blocking** | Intercepts D365 page load BEFORE rendering if DCA not running |
 | **Real-time Monitoring** | Checks DCA status every 30 seconds (configurable) |
 | **Multi-Method Detection** | 3 detection strategies ensure accuracy |
 | **Visual Alerts** | Toolbar badge, page indicator, and warning banners |
 | **Smart Notifications** | Alerts when DCA stops (not annoying spam) |
 | **One-Click Launch** | Start DCA directly from the extension |
 | **Presence Blocking** | Prevents "Available" status without DCA |
-| **Page Load Blocking** | Strict mode blocks omnichannel until DCA verified |
 
 ---
 
 ## 👤 User Journey Scenarios
 
-### Scenario 1: DCA Auto-Start Failed (Strict Mode)
+### Scenario 1: DCA Auto-Start Failed (Strict Mode - Navigation Blocked)
+
+```
+Timeline: DCA Failed to Auto-Start - STRICT ENFORCEMENT
+============================================================================
+
+08:00  Agent opens Edge, navigates to D365 Contact Center
+       |
+       v
+       Browser starts navigation to *.crm.dynamics.com...
+       |
+       v
+       ┌─────────────────────────────────────────────────────────────────┐
+       │  EXTENSION INTERCEPTS NAVIGATION (webNavigation.onCommitted)    │
+       │                                                                 │
+       │  Is DCA running? NO → REDIRECT to blocking page                 │
+       └─────────────────────────────────────────────────────────────────┘
+       |
+       v
+       ┌──────────────────────────────────────────────────────────────┐
+       │                                                              │
+       │    [D365 Contact Center Header Bar]                          │
+       │                                                              │
+       │              🔒 Desktop Companion App Required               │
+       │                                                              │
+       │    The Desktop Companion Application (DCA) must be           │
+       │    running to access the Contact Center workspace.           │
+       │                                                              │
+       │         [▶ Launch DCA]        [↻ Check Again]                │
+       │                                                              │
+       │    Destination: adatum.crm.dynamics.com                      │
+       │                                                              │
+       │   ┌─────────────────────────────────────────────────────┐    │
+       │   │ Why is this required?                               │    │
+       │   │ The Desktop Companion App ensures voice calls       │    │
+       │   │ continue seamlessly even if your browser closes.    │    │
+       │   └─────────────────────────────────────────────────────┘    │
+       │                                                              │
+       └──────────────────────────────────────────────────────────────┘
+       |
+       v
+08:01  Agent clicks "Launch DCA"
+       |
+       v
+       DCA starts, extension verifies it's running (auto-checks every 5s)
+       |
+       v
+       ┌──────────────────────────────────────────────────────────────┐
+       │  ✓ DCA Verified                                              │
+       │  Connecting to D365 Contact Center...                        │
+       └──────────────────────────────────────────────────────────────┘
+       |
+       v
+       Blocking page automatically redirects to original D365 URL
+       |
+       v
+       D365 Contact Center loads normally ✓
+
+RESULT: D365 NEVER LOADS until DCA is verified - ZERO risk of calls without DCA
+```
+
+### Scenario 2: Soft Mode (Warning Banner Only)
 
 ```
 Timeline: DCA Failed to Auto-Start
@@ -253,39 +314,46 @@ Timeline: DCA Failed to Auto-Start
 RESULT: Agent cannot receive calls until DCA is verified [OK]
 ```
 
-### Scenario 2: Presence Change Blocked (Soft Mode)
+### Scenario 2: Soft Mode (Warning Banner Only)
 
 ```
-Timeline: Agent Tries to Go Online Without DCA
+Timeline: Agent Opens D365 Without DCA - SOFT ENFORCEMENT
 ============================================================================
 
 08:00  Agent opens D365, DCA is not running
        |
        v
-       Page loads with warning banner (soft mode doesn't block page)
+       Page loads normally (soft mode doesn't block navigation)
        |
        v
-08:01  Agent tries to click "Available" status
+       ┌──────────────────────────────────────────────────────────────┐
+       │  ⚠️ WARNING BANNER (requires acknowledgment)                 │
+       │  DCA is not running. Voice calls may drop if browser fails. │
+       │  [I Understand the Risk]  [Launch DCA]                       │
+       └──────────────────────────────────────────────────────────────┘
        |
        v
-       +--------------------------------------------------------------+
-       |  [BLOCKED] Click intercepted!                                |
-       |                                                              |
-       |  "Cannot change to Available - DCA is not running"          |
-       |  [Launch DCA]                                                |
-       |                                                              |
-       +--------------------------------------------------------------+
+08:01  Agent tries to click "Available" status (Block Presence enabled)
+       |
+       v
+       ┌──────────────────────────────────────────────────────────────┐
+       │  [BLOCKED] Click intercepted!                                │
+       │                                                              │
+       │  "Cannot change to Available - DCA is not running"           │
+       │  [Launch DCA]                                                │
+       │                                                              │
+       └──────────────────────────────────────────────────────────────┘
        |
        v
 08:02  Agent clicks "Launch DCA", waits for it to start
        |
        v
-       +--------------------------------------------------------------+
-       |  [GREEN] DCA now running                                     |
-       |  Agent can now set presence to Available                     |
-       +--------------------------------------------------------------+
+       ┌──────────────────────────────────────────────────────────────┐
+       │  [GREEN] DCA now running                                     │
+       │  Agent can now set presence to Available                     │
+       └──────────────────────────────────────────────────────────────┘
 
-RESULT: Agent cannot go online until DCA is running [OK]
+RESULT: Page loads but agent cannot go online until DCA is running [OK]
 ```
 
 ### Scenario 3: DCA Crashes Mid-Shift
@@ -458,6 +526,81 @@ Detecting if a desktop application is running from a browser extension is not tr
 
 ## 🏗️ Architecture Deep Dive
 
+### Navigation Blocking Architecture (Strict Mode)
+
+The core innovation of this extension is **intercepting navigation BEFORE D365 loads**:
+
+```
+NAVIGATION INTERCEPTION FLOW (STRICT MODE)
+==========================================
+
+  Agent types/clicks URL to *.crm.dynamics.com
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  CHROME webNavigation.onCommitted                       │
+│                                                                         │
+│   Event fires when browser commits to navigation (before page renders)  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │  Is showBlockingModal │
+                    │   enabled (strict)?   │
+                    └───────────┬───────────┘
+                          │           │
+                        YES          NO
+                          │           │
+                    ┌─────▼─────┐    └─────► Page loads normally
+                    │   Is DCA  │             (soft/none mode)
+                    │  running? │
+                    └─────┬─────┘
+                      │       │
+                    YES      NO
+                      │       │
+                      │       ▼
+                      │   ┌────────────────────────────────────┐
+                      │   │ REDIRECT to blocking/blocking.html │
+                      │   │   ?url=<original-encoded-url>      │
+                      │   └─────────────────┬──────────────────┘
+                      │                     │
+                      │                     ▼
+                      │            ┌──────────────────────┐
+                      │            │   BLOCKING PAGE      │
+                      │            │ ┌──────────────────┐ │
+                      │            │ │ D365 Header      │ │
+                      │            │ │ 🔒 DCA Required  │ │
+                      │            │ │ [Launch] [Check] │ │
+                      │            │ │ Auto-checks/5s   │ │
+                      │            │ └──────────────────┘ │
+                      │            └──────────┬───────────┘
+                      │                       │
+                      │              DCA detected running
+                      │                       │
+                      │                       ▼
+                      │            ┌──────────────────────┐
+                      │            │ ALLOW_AND_REDIRECT   │
+                      │            │ message to service   │
+                      │            │ worker → add tab to  │
+                      │            │ allowedTabs Set      │
+                      │            └──────────┬───────────┘
+                      │                       │
+                      ▼                       ▼
+            ┌─────────────────────────────────────────┐
+            │          D365 CONTACT CENTER LOADS      │
+            │    (Tab is now in allowedTabs - won't   │
+            │     be intercepted again this session)  │
+            └─────────────────────────────────────────┘
+```
+
+### Why Navigation Interception?
+
+| Approach | Problem |
+|----------|---------|
+| **CSS Overlay** | D365 JavaScript still executes behind overlay |
+| **DOM Blocking** | Presence controls fire before DOM is ready |
+| **Content Script** | Runs at `document_idle` - too late |
+| **Navigation Interception** ✓ | D365 **never loads** until DCA verified |
+
 ### Component Architecture
 
 ```
@@ -469,7 +612,7 @@ COMPONENT ARCHITECTURE
   |    Popup UI      |  |   Options Page   |  |  Content Script UI   |
   |  - Status Card   |  |  - Settings Form |  |  - Floating Indicator|
   |  - Check Now     |  |  - Detection Cfg |  |  - Warning Banner    |
-  |  - Launch DCA    |  |  - Native Setup  |  |  - Status Panel      |
+  |  - Launch DCA    |  |  - Enforcement   |  |  - Status Panel      |
   +------------------+  +------------------+  +----------------------+
                               |
                               | Chrome Runtime Messaging
@@ -481,14 +624,16 @@ COMPONENT ARCHITECTURE
   | - HTTP Check   |  | - Badge Text  |  | - Sys Notif  |  | - Settings     |
   | - Protocol Chk |  | - Color State |  | - Rate Limit |  | - History      |
   +----------------+  +---------------+  +--------------+  +----------------+
-                              |
-          +-------------------+-------------------+
-          v                                       v
-  +----------------------+           +---------------------------+
-  |  Chrome Alarms API   |           |  Native Messaging API     |
-  |  - Periodic checks   |           |  - Direct process detect  |
-  |  - Battery efficient |           |  - DCA launch capability  |
-  +----------------------+           +-------------+-------------+
+          |                   |
+          |   +---------------+---------------+
+          |   |               |               |
+          v   v               v               v
+  +----------------+  +---------------+  +--------------------+
+  | webNavigation  |  | Chrome Alarms |  | Native Messaging   |
+  | .onCommitted   |  | API (30s chk) |  | API (process det)  |
+  | - URL blocking |  | - Periodic    |  | - Accurate detect  |
+  | - Tab tracking |  | - Efficient   |  | - DCA launch       |
+  +----------------+  +---------------+  +--------------------+
                                                    |
                                                    | stdio JSON
                                                    v
@@ -498,6 +643,15 @@ COMPONENT ARCHITECTURE
                                      |  - DCA launch via spawn() |
                                      |  - Windows API integration|
                                      +---------------------------+
+
+  BLOCKING PAGE (chrome-extension://[id]/blocking/blocking.html)
+  +------------------------------------------------------------------+
+  |  Standalone page that:                                           |
+  |  - Shows D365-branded blocking UI                                |
+  |  - Checks DCA status every 5 seconds                             |
+  |  - Sends ALLOW_AND_REDIRECT when DCA detected                    |
+  |  - Redirects to original URL automatically                       |
+  +------------------------------------------------------------------+
 ```
 
 ### Data Flow: Status Check Cycle
@@ -559,11 +713,15 @@ dca-companion-checker/
 ├── manifest.json                 # Extension manifest (Manifest V3)
 │
 ├── background/                   # Service Worker (runs always)
-│   ├── service-worker.js         # Main entry point, message routing
+│   ├── service-worker.js         # Main entry, message routing, navigation blocking
 │   ├── dca-detector.js           # Detection logic (3 methods)
 │   ├── badge-manager.js          # Toolbar icon state management
 │   ├── notification-manager.js   # System notification handling
 │   └── storage-manager.js        # Chrome storage abstraction
+│
+├── blocking/                     # 🆕 BLOCKING PAGE (Strict Mode)
+│   ├── blocking.html             # Full-page D365-branded blocking UI
+│   └── blocking.js               # DCA checking, redirect logic
 │
 ├── popup/                        # Popup UI (click extension icon)
 │   ├── popup.html                # Popup structure
@@ -589,7 +747,8 @@ dca-companion-checker/
 │   └── welcome.html              # Onboarding guide
 │
 ├── icons/                        # Extension icons
-│   ├── d365logo.png              # D365 branding
+│   ├── d365logo.png              # D365 branding (used in blocking page)
+│   ├── icon.svg                  # Extension icon source
 │   └── generate-icons.html       # Icon generation utility
 │
 ├── README.md                     # This file
@@ -727,12 +886,13 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 
 | Location | What You See | When |
 |----------|--------------|------|
+| **Blocking Page** | 🔒 D365-branded blocking UI | Strict mode, DCA not running |
 | **Toolbar Badge** | 🟢 Green check | DCA running |
 | | 🔴 Red exclamation | DCA not running |
 | | 🟡 Yellow spinner | Checking |
 | **Popup Panel** | Detailed status card | Click extension |
 | **Page Indicator** | Floating badge | On D365 pages |
-| **Warning Banner** | Full-width alert | Voice pages, DCA down |
+| **Warning Banner** | Full-width alert | Soft mode, DCA down |
 
 ### 🔔 Smart Notifications
 
@@ -767,16 +927,20 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 | Show Page Indicator | On/Off | On |
 | Indicator Position | Bottom Right, Bottom Left, Top Right, Top Left | Bottom Right |
 
-**🔒 Enforcement Mode Settings (MOST IMPORTANT):**
+**🔒 Enforcement Mode Settings (SIMPLIFIED):**
+
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **D365 Contact Center URL** | **URL pattern to block until DCA running (supports wildcards)** | **\*.crm.dynamics.com** |
-| Enforcement Level | None (warn) / Soft (require ack) / **Strict (block page)** | **Strict** |
+| **D365 Contact Center URL** | URL pattern to enforce (supports wildcards) | \*.crm.dynamics.com |
+| **Enforcement Level** | None / Soft / **Strict** (single dropdown) | **Strict** |
 | Block Presence Change | Prevent "Available" status without DCA | **On** |
-| Show Blocking Modal | Full-screen modal until DCA running | **On** |
-| Require Acknowledgment | Agent must click "I understand" to dismiss warning | On |
 | Log Non-Compliance | Record when agents work without DCA | On |
 | Auto-Launch DCA | Automatically try to start DCA | Off |
+
+> **📝 Note:** The Enforcement Level dropdown automatically sets the blocking behavior:
+> - **Strict** = Navigation blocked until DCA verified (blocking page shown)
+> - **Soft** = Page loads but warning requires acknowledgment
+> - **None** = Warning banner only (dismissible)
 
 **URL Pattern Examples (supports wildcards):**
 | Pattern | Matches |
@@ -804,59 +968,109 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 
 ## 🔒 Enforcement Modes Explained
 
-### What Happens When DCA is Not Running?
+### Single Control - Three Levels
 
-The extension offers three enforcement levels:
+The extension uses a **single dropdown** to control enforcement. This eliminates confusion from multiple overlapping toggles:
 
 ```
-ENFORCEMENT LEVELS
-------------------
+ENFORCEMENT LEVEL (Single Dropdown Control)
+============================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Enforcement Level: [▼ Strict - Block page until DCA is running     ]  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  • None - Show warning banner only                                      │
+│  • Soft - Warning + require acknowledgment                              │
+│  • Strict - Block page until DCA is running  ← DEFAULT                  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### What Each Level Does
+
+| Level | Navigation | Warning Banner | Acknowledgment | Page Blocked |
+|-------|------------|----------------|----------------|--------------|
+| **None** | Allowed | Dismissible | No | No |
+| **Soft** | Allowed | Requires click | **Yes** | No |
+| **Strict** | **BLOCKED** | N/A (blocking page) | N/A | **YES** |
+
+### Detailed Behavior
+
+```
+ENFORCEMENT LEVELS IN DETAIL
+----------------------------
 
 NONE (Warning Only)
-  - Shows warning banner (dismissible)
-  - Shows red status indicator
-  - Sends notifications
-  - Agent CAN dismiss and work without DCA
-  - Omnichannel loads normally
+┌─────────────────────────────────────────────────────────┐
+│  ⚠️ DCA is not running. [Dismiss] [Launch DCA]         │  ← Dismissible
+└─────────────────────────────────────────────────────────┘
+  - Warning banner shown (can be dismissed)
+  - Red status indicator on page
+  - Notifications sent when DCA stops
+  - Agent CAN work without DCA
+  - D365 loads normally
   - Presence changes allowed
 
-SOFT (Require Acknowledgment) <-- DEFAULT
+
+SOFT (Require Acknowledgment)
+┌─────────────────────────────────────────────────────────┐
+│  ⚠️ DCA not running - voice calls at risk              │
+│  [I Understand the Risk]  [Launch DCA]                 │  ← Must click
+└─────────────────────────────────────────────────────────┘
   - Warning banner requires "I Understand the Risk" click
-  - Blocks presence change to "Available" until DCA running
-  - Agent must acknowledge risk before dismissing
+  - Block presence change to "Available" (if enabled)
+  - Agent must acknowledge before dismissing
   - Acknowledgment logged for audit
-  - Omnichannel loads but presence blocked
+  - D365 loads but with warning
 
-STRICT (Full Blocking) <-- RECOMMENDED FOR ENTERPRISES
-  - Full-screen modal blocks ALL page interaction
-  - CANNOT be dismissed until DCA is running
-  - Omnichannel CANNOT load until DCA verified
-  - Agent CANNOT go online without DCA
-  - Only options: Launch DCA or Check Again
+
+STRICT (Full Navigation Blocking) ← RECOMMENDED
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│                    🔒 Desktop Companion App Required                    │
+│                                                                         │
+│    The Desktop Companion Application (DCA) must be running              │
+│    to access the Contact Center workspace.                              │
+│                                                                         │
+│              [▶ Launch DCA]        [↻ Check Again]                      │
+│                                                                         │
+│    ┌─────────────────────────────────────────────────────────────┐      │
+│    │ Why is this required?                                       │      │
+│    │ The Desktop Companion App ensures voice calls continue      │      │
+│    │ seamlessly even if your browser closes unexpectedly.        │      │
+│    └─────────────────────────────────────────────────────────────┘      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+  - D365 NEVER LOADS until DCA is verified
+  - Navigation intercepted BEFORE page renders
+  - Blocking page shows D365 branding
+  - Auto-checks DCA every 5 seconds
+  - Automatically redirects when DCA detected
+  - Agent CANNOT access D365 without DCA
 ```
 
-### Block Presence Change Feature
+### Why Strict Mode is Recommended
 
-**This is the key feature.** When Omnichannel loads, it may automatically try to set agent presence. This feature intercepts that:
+| Risk | None/Soft Mode | Strict Mode |
+|------|---------------|-------------|
+| Agent forgets to click "Launch DCA" | ⚠️ Possible | ✅ Impossible |
+| D365 loads and sets presence | ⚠️ Yes | ✅ No |
+| Calls route before DCA ready | ⚠️ Possible | ✅ Impossible |
+| Agent dismisses warning | ⚠️ Possible | ✅ N/A |
+
+### Additional Toggle: Block Presence Change
+
+This is an **independent setting** that works alongside any enforcement level:
 
 ```
-Omnichannel loads / Agent clicks "Available"
-         |
-         v
-+-----------------------------+
-|  Is DCA Running?            |
-+-----------------------------+
-         |
-    +----+----+
-    |         |
-   YES        NO
-    |         |
-    v         v
-+---------+  +--------------------------------------+
-| Allow   |  | BLOCK + Show Message:                |
-| presence|  | "Cannot change to Available -        |
-| change  |  |  DCA is not running. Launch DCA"     |
-+---------+  +--------------------------------------+
+Block Presence Change: [ON]
+────────────────────────────
+
+Even if D365 loads (None/Soft mode), this setting:
+- Intercepts clicks on "Available" status
+- Shows "Cannot change to Available - DCA not running"
+- Only allows presence change after DCA verified
 ```
 
 ### Compliance Logging
@@ -915,21 +1129,23 @@ Restart your browser after installation.
 
 ### Recommended Settings by Role
 
-| Role | Check Interval | Enforcement Level | Block Presence | Log Non-Compliance |
-|------|----------------|-------------------|----------------|-------------------|
-| **Voice Agent** | 15-30 seconds | Soft | Recommended | On |
-| **Supervisor** | 60 seconds | None | Off | On |
-| **IT Admin** | 30 seconds | Strict (for testing) | On | On |
-| **Compliance-Critical** | 15 seconds | Strict | On | On |
+| Role | Check Interval | Enforcement Level | Block Presence |
+|------|----------------|-------------------|----------------|
+| **Voice Agent** | 30 seconds | **Strict** | On |
+| **Supervisor** | 60 seconds | Soft | Off |
+| **IT Admin** | 30 seconds | Strict | On |
+| **Compliance-Critical** | 15 seconds | **Strict** | On |
 
 ### Enterprise Configuration Recommendations
 
-| Environment | Enforcement Level | Block Presence | Blocking Modal | Auto-Launch |
-|-------------|-------------------|----------------|----------------|-------------|
-| **Production (Standard)** | Soft | Off | Off | Off |
-| **Production (High-Compliance)** | Strict | On | On | On |
-| **Training/UAT** | None | Off | Off | Off |
-| **Pilot Rollout** | Soft | Off | Off | On |
+| Environment | Enforcement Level | Block Presence | Log Non-Compliance |
+|-------------|-------------------|----------------|-------------------|
+| **Production (Standard)** | **Strict** | On | On |
+| **Production (High-Compliance)** | **Strict** | On | On |
+| **Training/UAT** | Soft | Off | Off |
+| **Pilot Rollout** | Soft | Off | On |
+
+> **💡 Recommendation:** For production environments, always use **Strict** enforcement. This guarantees DCA is running before ANY D365 page loads - eliminating the risk of calls being routed to agents without DCA protection.
 
 ---
 
@@ -992,8 +1208,9 @@ Include `install.bat` execution in your endpoint management tool (SCCM, Intune, 
 | `alarms` | Schedule periodic checks |
 | `notifications` | Alert you when DCA stops |
 | `nativeMessaging` | Communicate with native host |
-| `tabs` | Update badge for active tab |
-| `host_permissions` (dynamics.com) | Inject status indicator |
+| `tabs` | Update badge, redirect to blocking page |
+| `webNavigation` | **Intercept navigation to block D365 load** |
+| `host_permissions` (dynamics.com) | Inject status indicator, block navigation |
 
 ### What We DON'T Do
 

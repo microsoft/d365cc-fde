@@ -50,14 +50,16 @@
       ],
       "js": ["content/content.js"],
       "css": ["content/content.css"],
-      "run_at": "document_start"
+      "run_at": "document_idle"
     }
   ],
   "permissions": [
     "storage",
     "alarms",
     "notifications",
-    "nativeMessaging"
+    "nativeMessaging",
+    "webNavigation",
+    "tabs"
   ],
   "host_permissions": [
     "*://*.dynamics.com/*",
@@ -66,8 +68,8 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "assets/*"],
-      "matches": ["*://*.dynamics.com/*"]
+      "resources": ["icons/*", "assets/*", "blocking/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   "commands": {

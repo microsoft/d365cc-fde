@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D365 Contact Center - DCA Required</title>
+  <style>
+    :root {
+      /* D365 Brand Colors - from the logo gradient */
+      --d365-blue: #4B53BC;
+      --d365-purple: #7B6FDE;
+      --d365-light-purple: #9D8DF1;
+      --d365-gradient: linear-gradient(135deg, #4B53BC 0%, #7B6FDE 50%, #9D8DF1 100%);
+      
+      /* Microsoft standard colors */
+      --ms-blue: #0078d4;
+      --ms-blue-hover: #106ebe;
+      --text-primary: #323130;
+      --text-secondary: #605e5c;
+      --text-muted: #a19f9d;
+      --bg-white: #ffffff;
+      --bg-gray: #f3f2f1;
+      --border: #edebe9;
+      --success: #107c10;
+      --warning: #ffb900;
+      --error: #d13438;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg-gray);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header bar - D365 style with gradient accent */
+    .header {
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--d365-gradient);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .d365-logo {
+      height: 28px;
+      width: auto;
+    }
+
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .container {
+      background: var(--bg-white);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.08);
+      padding: 48px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Icon */
+    .icon-wrapper {
+      margin-bottom: 24px;
+    }
+
+    .icon-circle {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(75, 83, 188, 0.1) 0%, rgba(123, 111, 222, 0.15) 100%);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(123, 111, 222, 0.2);
+    }
+
+    .icon-circle svg {
+      width: 40px;
+      height: 40px;
+      color: var(--d365-blue);
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 32px;
+    }
+
+    /* Status card */
+    .status-card {
+      background: var(--bg-gray);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-dot.running {
+      background: var(--success);
+      animation: none;
+    }
+
+    .status-dot.error {
+      background: var(--error);
+      animation: none;
+    }
+
+    .destination {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .destination-label {
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Buttons - D365 gradient style */
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-width: 130px;
+      height: 40px;
+    }
+
+    .btn-primary {
+      background: var(--d365-gradient);
+      color: white;
+      box-shadow: 0 2px 8px rgba(75, 83, 188, 0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 12px rgba(75, 83, 188, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: var(--bg-white);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-gray);
+      border-color: #c8c6c4;
+    }
+
+    .btn.checking {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .btn-secondary .spinner {
+      border-color: rgba(0,0,0,0.1);
+      border-top-color: var(--text-primary);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Help link */
+    .help-link {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .help-link a {
+      color: var(--d365-blue);
+      text-decoration: none;
+    }
+
+    .help-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Info box */
+    .info-box {
+      background: linear-gradient(135deg, rgba(75, 83, 188, 0.08) 0%, rgba(123, 111, 222, 0.08) 100%);
+      border-left: 3px solid var(--d365-blue);
+      border-radius: 0 4px 4px 0;
+      padding: 12px 16px;
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--text-primary);
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    .info-box strong {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--d365-blue);
+    }
+
+    .info-box.success {
+      background: #dff6dd;
+      border-color: var(--success);
+    }
+
+    .info-box.success strong {
+      color: var(--success);
+    }
+
+    /* Footer */
+    .footer {
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-white);
+    }
+
+    .footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- D365 Header Bar -->
+  <header class="header">
+    <div class="header-logo">
+      <!-- D365 Logo from icons folder -->
+      <img src="../icons/d365logo.png" alt="Dynamics 365" class="d365-logo">
+      <span class="header-title">Dynamics 365 Contact Center</span>
+    </div>
+    <div class="header-divider"></div>
+    <span class="header-subtitle">Agent Workspace</span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="container">
+      <div class="icon-wrapper">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+      </div>
+
+      <h1>Desktop Companion App Required</h1>
+      <p class="subtitle">
+        The Desktop Companion Application (DCA) must be running to access the Contact Center workspace.
+      </p>
+
+      <div class="status-card">
+        <div class="status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Checking DCA status...</span>
+        </div>
+        <div class="destination" id="originalUrl">
+          <span class="destination-label">Destination</span>
+          Loading...
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="launchBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Launch DCA
+        </button>
+        <button class="btn btn-secondary" id="checkBtn">
+          <span id="checkBtnContent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Check Again
+          </span>
+        </button>
+      </div>
+
+      <p class="help-link">
+        Need help? <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" target="_blank" rel="noopener">View DCA documentation</a>
+      </p>
+
+      <div class="info-box" id="infoBox">
+        <strong>Why is this required?</strong>
+        The Desktop Companion App ensures voice calls continue seamlessly even if your browser closes unexpectedly. Without DCA, incoming calls may fail to connect.
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <a href="https://www.microsoft.com/legal/terms-of-use" target="_blank">Terms of Use</a> · 
+    <a href="https://privacy.microsoft.com/privacystatement" target="_blank">Privacy</a> · 
+    © Microsoft 2024
+  </footer>
+
+  <script src="blocking.js"></script>
+</body>
+</html>
