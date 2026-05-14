@@ -1,0 +1,12 @@
+{
+  "name": "com.microsoft.dynamics.dca.checker",
+  "description": "Native messaging host for D365 DCA Companion Checker",
+  "path": "C:\\Program Files\\D365 DCA Checker\\dca-checker-host.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://EXTENSION_ID_HERE/",
+    "chrome-extension://*/",
+    "microsoft-edge-extension://*/",
+    "edge-extension://*/"
+  ]
+}

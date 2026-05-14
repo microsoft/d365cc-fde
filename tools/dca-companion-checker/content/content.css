@@ -1,0 +1,386 @@
+/* D365 Contact Center - DCA Companion Checker - Content Script Light Theme v1.0.0 */
+
+/* Status Indicator */
+.dca-status-indicator {
+  position: fixed;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dca-status-indicator:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Indicator Positions */
+.dca-status-indicator.position-bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.dca-status-indicator.position-bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.dca-status-indicator.position-top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.dca-status-indicator.position-top-left {
+  top: 20px;
+  left: 20px;
+}
+
+/* Indicator Dot */
+.dca-indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9ca3af;
+  transition: all 0.3s ease;
+}
+
+.dca-status-indicator.running .dca-indicator-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.dca-status-indicator.not-running .dca-indicator-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  animation: dca-pulse 2s infinite;
+}
+
+.dca-status-indicator.checking .dca-indicator-dot {
+  background: #f59e0b;
+  animation: dca-checking 1s infinite;
+}
+
+@keyframes dca-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.1);
+  }
+}
+
+@keyframes dca-checking {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Indicator Label */
+.dca-indicator-label {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Indicator Status */
+.dca-indicator-status {
+  color: #666666;
+  font-size: 11px;
+}
+
+.dca-status-indicator.running .dca-indicator-status {
+  color: #22c55e;
+}
+
+.dca-status-indicator.not-running .dca-indicator-status {
+  color: #ef4444;
+}
+
+/* Status Panel */
+.dca-status-panel {
+  position: fixed;
+  z-index: 999998;
+  width: 300px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dca-status-panel.hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+/* Panel Header */
+.dca-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+  color: white;
+}
+
+.dca-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dca-panel-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.8;
+  line-height: 1;
+  padding: 0;
+}
+
+.dca-panel-close:hover {
+  opacity: 1;
+}
+
+/* Panel Content */
+.dca-panel-content {
+  padding: 16px;
+}
+
+.dca-panel-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.dca-panel-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+
+.dca-status-panel.running .dca-panel-dot {
+  background: #22c55e;
+}
+
+.dca-status-panel.not-running .dca-panel-dot {
+  background: #ef4444;
+  animation: dca-pulse 2s infinite;
+}
+
+.dca-panel-status-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.dca-status-panel.running .dca-panel-status-text {
+  color: #16a34a;
+}
+
+.dca-status-panel.not-running .dca-panel-status-text {
+  color: #dc2626;
+}
+
+/* Panel Details */
+.dca-panel-details {
+  margin-bottom: 16px;
+}
+
+.dca-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.dca-detail-label {
+  color: #666666;
+}
+
+.dca-detail-value {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+/* Panel Actions */
+.dca-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dca-action-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dca-check-btn {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+}
+
+.dca-check-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dca-launch-btn {
+  background: #f8f9fa;
+  color: #1a1a1a;
+  border: 1px solid #d1d5db;
+}
+
+.dca-launch-btn:hover {
+  background: #f0f0f0;
+}
+
+/* Panel Warning */
+.dca-panel-warning {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+}
+
+.dca-panel-warning.hidden {
+  display: none;
+}
+
+.dca-warning-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.dca-warning-text {
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+/* Warning Banner */
+.dca-warning-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999997;
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+  border-bottom: 2px solid #f59e0b;
+  padding: 0;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all 0.3s ease;
+}
+
+.dca-warning-banner.hidden,
+.dca-warning-banner.dismissed {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+.dca-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dca-banner-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.dca-banner-text {
+  font-size: 13px;
+  color: #78350f;
+  flex: 1;
+  text-align: center;
+}
+
+.dca-banner-link {
+  color: #0078d4;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dca-banner-link:hover {
+  color: #106ebe;
+}
+
+.dca-banner-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #92400e;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.dca-banner-close:hover {
+  opacity: 1;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 400px) {
+  .dca-status-panel {
+    width: calc(100vw - 40px);
+    left: 20px !important;
+    right: 20px !important;
+  }
+}
+
+/* Animation Classes */
+.dca-fade-in {
+  animation: dca-fadeIn 0.3s ease;
+}
+
+@keyframes dca-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Print Styles - Hide DCA elements */
+@media print {
+  .dca-status-indicator,
+  .dca-status-panel,
+  .dca-warning-banner {
+    display: none !important;
+  }
+}

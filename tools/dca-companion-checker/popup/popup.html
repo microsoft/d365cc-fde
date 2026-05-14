@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCA Companion Checker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <img src="../icons/d365logo.png" alt="Dynamics 365" class="logo">
+      <h1>DCA Companion Checker</h1>
+      <p class="subtitle">Monitors Desktop Companion Application status</p>
+      <span class="badge">v1.0.0 • D365 Contact Center</span>
+    </header>
+
+    <!-- Status Section -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-indicator" id="statusIndicatorBar"></div>
+        <h2>Application Status</h2>
+      </div>
+      
+      <div class="status-card" id="statusCard">
+        <div class="status-visual">
+          <div class="status-dot" id="statusDot"></div>
+        </div>
+        <div class="status-info">
+          <span class="status-title" id="statusTitle">Checking...</span>
+          <span class="status-desc" id="statusDescription">Detecting DCA status</span>
+        </div>
+        <div class="status-badge" id="statusBadge">
+          <span id="statusBadgeText">...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Details Section -->
+    <section class="section" id="detailsSection">
+      <div class="section-header">
+        <div class="section-indicator purple"></div>
+        <h2>Details</h2>
+      </div>
+      
+      <div class="detail-row">
+        <span class="detail-label">Last Check</span>
+        <span class="detail-value" id="lastCheck">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Detection Method</span>
+        <span class="detail-value" id="detectionMethod">--</span>
+      </div>
+      <div class="detail-row" id="versionRow" style="display: none;">
+        <span class="detail-label">DCA Version</span>
+        <span class="detail-value" id="dcaVersion">--</span>
+      </div>
+    </section>
+
+    <!-- Warning Banner -->
+    <div class="warning-banner" id="warningBanner" style="display: none;">
+      <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <div class="warning-content">
+        <span class="warning-title">DCA Not Running</span>
+        <span class="warning-text">Voice calls may experience issues. Start the Desktop Companion Application.</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <button class="action-button" id="checkNowBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/>
+        <path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      Check Now
+    </button>
+
+    <button class="action-button secondary" id="launchDcaBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      Launch DCA
+    </button>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" target="_blank" class="help-link">
+          Learn about DCA
+        </a>
+      </div>
+      <button class="settings-btn" id="settingsBtn" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

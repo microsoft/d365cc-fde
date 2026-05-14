@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Generate Extension Icons</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 40px; background: #f5f5f5; }
+    h1 { color: #333; }
+    .icons { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+    .icon-container { text-align: center; background: white; padding: 20px; border-radius: 8px; }
+    canvas { border: 1px solid #ddd; }
+    p { margin-top: 8px; font-size: 12px; color: #666; }
+    button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; }
+    .instructions { background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>DCA Checker Icon Generator</h1>
+  
+  <div class="instructions">
+    <h3>How to save icons:</h3>
+    <ol>
+      <li>Right-click each icon canvas below</li>
+      <li>Select "Save image as..."</li>
+      <li>Save with the filename shown (e.g., icon16.png)</li>
+      <li>Place files in the <code>icons/</code> folder</li>
+    </ol>
+  </div>
+
+  <div class="icons" id="icons"></div>
+
+  <h2>Status Variant Icons</h2>
+  <div class="icons" id="statusIcons"></div>
+
+  <script>
+    const sizes = [16, 32, 48, 128];
+    const variants = [
+      { name: '', color: '#0078d4', status: null },
+      { name: '-success', color: '#22c55e', status: '✓' },
+      { name: '-warning', color: '#f59e0b', status: '!' },
+      { name: '-error', color: '#ef4444', status: '✗' }
+    ];
+
+    function drawIcon(canvas, size, color, status = null) {
+      const ctx = canvas.getContext('2d');
+      const padding = size * 0.1;
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const radius = (size - padding * 2) / 2;
+
+      // Clear
+      ctx.clearRect(0, 0, size, size);
+
+      // Background circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Inner design - layers
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = Math.max(1, size * 0.08);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Draw D365-style layers
+      const layerHeight = radius * 0.35;
+      const layerWidth = radius * 1.2;
+
+      // Bottom layer
+      ctx.beginPath();
+      ctx.moveTo(centerX - layerWidth/2, centerY + layerHeight);
+      ctx.lineTo(centerX, centerY + layerHeight * 1.5);
+      ctx.lineTo(centerX + layerWidth/2, centerY + layerHeight);
+      ctx.stroke();
+
+      // Middle layer
+      ctx.beginPath();
+      ctx.moveTo(centerX - layerWidth/2, centerY);
+      ctx.lineTo(centerX, centerY + layerHeight * 0.5);
+      ctx.lineTo(centerX + layerWidth/2, centerY);
+      ctx.stroke();
+
+      // Top layer
+      ctx.beginPath();
+      ctx.moveTo(centerX - layerWidth/2, centerY - layerHeight);
+      ctx.lineTo(centerX, centerY - layerHeight * 0.5);
+      ctx.lineTo(centerX + layerWidth/2, centerY - layerHeight);
+      ctx.stroke();
+
+      // Top point
+      ctx.beginPath();
+      ctx.moveTo(centerX - layerWidth/2, centerY - layerHeight);
+      ctx.lineTo(centerX, centerY - layerHeight * 1.5);
+      ctx.lineTo(centerX + layerWidth/2, centerY - layerHeight);
+      ctx.stroke();
+
+      // Status badge for variant icons
+      if (status && size >= 32) {
+        const badgeRadius = size * 0.2;
+        const badgeX = size - badgeRadius - padding/2;
+        const badgeY = size - badgeRadius - padding/2;
+
+        // Badge background
+        ctx.beginPath();
+        ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        
+        // Badge text
+        ctx.fillStyle = color;
+        ctx.font = `bold ${badgeRadius * 1.2}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(status, badgeX, badgeY);
+      }
+    }
+
+    // Generate main icons
+    const iconsContainer = document.getElementById('icons');
+    sizes.forEach(size => {
+      const container = document.createElement('div');
+      container.className = 'icon-container';
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      drawIcon(canvas, size, '#0078d4');
+      
+      container.appendChild(canvas);
+      container.innerHTML += `<p>icon${size}.png</p>`;
+      iconsContainer.appendChild(container);
+    });
+
+    // Generate status variant icons
+    const statusContainer = document.getElementById('statusIcons');
+    variants.forEach(variant => {
+      if (!variant.status) return;
+      
+      [48, 128].forEach(size => {
+        const container = document.createElement('div');
+        container.className = 'icon-container';
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        drawIcon(canvas, size, variant.color, variant.status);
+        
+        container.appendChild(canvas);
+        container.innerHTML += `<p>icon${variant.name}-${size}.png</p>`;
+        statusContainer.appendChild(container);
+      });
+    });
+  </script>
+</body>
+</html>

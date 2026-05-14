@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to DCA Checker</title>
+  <style>
+    :root {
+      --primary: #0078d4;
+      --success: #22c55e;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --bg: #f8fafc;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+    .feature {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .feature h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .feature p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .steps {
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .steps h2 {
+      margin-bottom: 24px;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .step-content h4 {
+      margin-bottom: 4px;
+    }
+    .step-content p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .cta {
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #106ebe;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <img src="../icons/d365logo.png" alt="Dynamics 365" class="logo">
+      <h1>Welcome to DCA Checker</h1>
+      <p class="subtitle">Ensure your Desktop Companion Application is always ready for voice calls</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🔍</div>
+        <h3>Auto Detection</h3>
+        <p>Automatically detects if the Desktop Companion Application is running using multiple detection methods.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔔</div>
+        <h3>Smart Notifications</h3>
+        <p>Get notified instantly when DCA stops running so you can take action before your next call.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Visual Indicators</h3>
+        <p>See DCA status at a glance with badge icons and on-page status indicators in D365.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🚀</div>
+        <h3>Quick Launch</h3>
+        <p>Launch DCA directly from the extension with one click when needed.</p>
+      </div>
+    </div>
+
+    <div class="steps">
+      <h2>Getting Started</h2>
+      
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Install the Desktop Companion Application</h4>
+          <p>If you haven't already, install DCA from your organization's software portal or the Microsoft Store.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Check the Extension Icon</h4>
+          <p>Look for the extension icon in your browser toolbar. A green badge means DCA is running; red means it's not.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Open D365 Contact Center</h4>
+          <p>Navigate to your D365 Contact Center workspace. You'll see a floating status indicator on the page.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h4>Configure Settings (Optional)</h4>
+          <p>Click the extension icon and go to settings to customize notifications, check intervals, and more.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" 
+         target="_blank" class="btn">
+        Learn More About DCA
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>D365 Contact Center Tools • <a href="options/options.html">Settings</a></p>
+    </div>
+  </div>
+</body>
+</html>
