@@ -9,6 +9,62 @@
 (function() {
   'use strict';
 
+  // ============================================================
+  // IMMEDIATE BLOCKING - runs BEFORE anything else loads
+  // This must happen synchronously at document_start
+  // ============================================================
+  function createImmediateBlocker() {
+    // Create full-page blocker immediately (no async, no waiting)
+    const blocker = document.createElement('div');
+    blocker.id = 'dca-immediate-blocker';
+    blocker.style.cssText = `
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: #1a1a2e !important;
+      z-index: 2147483647 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    `;
+    blocker.innerHTML = `
+      <div style="text-align: center; color: white; padding: 40px;">
+        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+        <h1 style="font-size: 24px; margin-bottom: 10px; color: #ffd93d;">Desktop Companion App Check</h1>
+        <p style="font-size: 16px; color: #ccc;">Verifying DCA is running before loading page...</p>
+      </div>
+    `;
+    
+    // Insert as first element in document
+    if (document.documentElement) {
+      document.documentElement.insertBefore(blocker, document.documentElement.firstChild);
+    } else {
+      // If documentElement not ready, try again when it is
+      const observer = new MutationObserver(() => {
+        if (document.documentElement && !document.getElementById('dca-immediate-blocker')) {
+          document.documentElement.insertBefore(blocker, document.documentElement.firstChild);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    }
+    
+    return blocker;
+  }
+
+  // Check if this looks like a D365 dynamics URL and show blocker immediately
+  // We'll verify settings later and remove if not needed
+  const isDynamicsUrl = window.location.hostname.includes('dynamics.com');
+  let immediateBlocker = null;
+  
+  if (isDynamicsUrl) {
+    immediateBlocker = createImmediateBlocker();
+    console.log('[DCA Checker] Immediate blocker shown at document_start');
+  }
+
   const DCA_CHECKER = {
     status: null,
     indicator: null,
@@ -18,6 +74,7 @@
     isTargetUrl: false,
     pollInterval: null,
     pageBlocked: false,
+    immediateBlocker: immediateBlocker,
 
     /**
      * Initialize the content script
@@ -34,10 +91,17 @@
       // Check if this is a voice-related page
       this.isVoicePage = this.detectVoicePage();
 
-      // If this is the target URL and strict mode, BLOCK IMMEDIATELY
+      // If NOT target URL or NOT strict mode, remove immediate blocker
+      if (this.immediateBlocker && (!this.isTargetUrl || this.settings.enforcementLevel !== 'strict')) {
+        console.log('[DCA Checker] Not target URL or not strict mode - removing blocker');
+        this.immediateBlocker.remove();
+        this.immediateBlocker = null;
+      }
+
+      // If this is the target URL and strict mode, keep blocking (upgrade blocker to full modal)
       if (this.isTargetUrl && this.settings.enforcementLevel === 'strict') {
         console.log('[DCA Checker] Target URL detected with STRICT mode - checking DCA before allowing page');
-        // Show blocking overlay immediately
+        // Show full blocking modal (replaces immediate blocker)
         this.showBlockingModal();
         this.pageBlocked = true;
       }
@@ -352,6 +416,14 @@
      * Show full-screen blocking modal
      */
     showBlockingModal() {
+      // Remove immediate blocker if present (we're upgrading to full modal)
+      if (this.immediateBlocker) {
+        this.immediateBlocker.remove();
+        this.immediateBlocker = null;
+      }
+      const existingBlocker = document.getElementById('dca-immediate-blocker');
+      if (existingBlocker) existingBlocker.remove();
+
       if (document.querySelector('.dca-blocking-modal')) return;
 
       const modal = document.createElement('div');
@@ -399,20 +471,35 @@
         this.checkNow();
       });
 
-      document.body.appendChild(modal);
-
-      // Add modal styles if not present
-      this.injectBlockingModalStyles();
+      // Wait for body if not available (safety check for document_start)
+      const appendModal = () => {
+        if (document.body) {
+          document.body.appendChild(modal);
+          this.injectBlockingModalStyles();
+        } else {
+          // Wait and try again
+          setTimeout(appendModal, 10);
+        }
+      };
+      appendModal();
     },
 
     /**
      * Hide blocking modal
      */
     hideBlockingModal() {
+      // Remove full blocking modal
       const modal = document.querySelector('.dca-blocking-modal');
       if (modal) {
         modal.remove();
       }
+      // Also remove immediate blocker if still present
+      if (this.immediateBlocker) {
+        this.immediateBlocker.remove();
+        this.immediateBlocker = null;
+      }
+      const existingBlocker = document.getElementById('dca-immediate-blocker');
+      if (existingBlocker) existingBlocker.remove();
     },
 
     /**
