@@ -251,6 +251,11 @@ async function handleStatusChange(wasRunning, isRunning) {
         requireInteraction: true
       });
     }
+    
+    // Sync presence to D365 (set to "DCA Not Running" status)
+    if (settings.enablePresenceSync && settings.dcaNotRunningPresenceId) {
+      await syncPresenceToD365(settings.dcaNotRunningPresenceId, 'DCA Not Running');
+    }
   } else if (isRunning && !wasRunning) {
     // DCA started
     console.log('[DCA Checker] DCA started running');
@@ -262,6 +267,51 @@ async function handleStatusChange(wasRunning, isRunning) {
         type: 'success'
       });
     }
+    
+    // Sync presence to D365 (restore to "Available" status)
+    if (settings.enablePresenceSync) {
+      // Use configured available presence ID, or null for default
+      const availablePresenceId = settings.availablePresenceId || null;
+      await syncPresenceToD365(availablePresenceId, 'Available');
+    }
+  }
+}
+
+// Sync agent presence to D365 via content script
+// The content script has access to the page context and can make authenticated Web API calls
+async function syncPresenceToD365(presenceId, presenceName) {
+  if (!presenceId) {
+    console.log('[DCA Checker] Skipping presence sync - no presence ID configured');
+    return;
+  }
+  
+  console.log(`[DCA Checker] Syncing presence to D365: ${presenceName} (${presenceId})`);
+  
+  try {
+    // Send message to all D365 tabs to sync presence
+    const tabs = await chrome.tabs.query({ url: '*://*.dynamics.com/*' });
+    
+    if (tabs.length === 0) {
+      console.log('[DCA Checker] No D365 tabs open, skipping presence sync');
+      return;
+    }
+    
+    // Send to the first active D365 tab
+    const targetTab = tabs.find(t => t.active) || tabs[0];
+    
+    const response = await chrome.tabs.sendMessage(targetTab.id, {
+      type: 'SYNC_PRESENCE',
+      presenceId: presenceId,
+      presenceName: presenceName
+    });
+    
+    if (response?.success) {
+      console.log(`[DCA Checker] Presence synced successfully to ${presenceName}`);
+    } else {
+      console.warn('[DCA Checker] Presence sync failed:', response?.error);
+    }
+  } catch (error) {
+    console.error('[DCA Checker] Error syncing presence:', error);
   }
 }
 
@@ -371,6 +421,11 @@ function getDefaultSettings() {
     showBadge: true,
     showPageIndicator: true,
     autoLaunch: false,
+    // D365 Integration
+    enablePresenceSync: false,
+    dcaNotRunningPresenceId: '',
+    availablePresenceId: '',
+    // Detection
     ports: [9222, 9223, 9224, 9876, 12345], // Possible DCA ports
     protocolHandlers: ['ms-ccaas', 'msdyn-ccaas', 'd365-dca'],
     nativeMessagingHost: 'com.microsoft.dynamics.dca.checker'

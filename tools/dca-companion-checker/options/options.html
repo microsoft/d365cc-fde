@@ -208,6 +208,58 @@
         </div>
       </section>
 
+      <!-- D365 Integration -->
+      <section class="settings-section">
+        <h2 class="section-title">D365 Integration</h2>
+        <p class="section-description">
+          Automatically update agent presence in Dynamics 365 based on DCA status. When DCA stops, the extension can set the agent to a "DCA Not Running" presence status, making them unavailable for routing.
+        </p>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="enablePresenceSync">Enable Presence Sync</label>
+            <p class="setting-description">Automatically change agent presence in D365 when DCA status changes</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="enablePresenceSync">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item" style="background: #e8f4fd; border-left: 4px solid #4B53BC; padding: 12px;">
+          <div class="setting-info">
+            <label class="setting-label" for="dcaNotRunningPresenceId">"DCA Not Running" Presence ID</label>
+            <p class="setting-description">
+              The GUID of the custom presence status to set when DCA is not running.<br>
+              <strong>Setup:</strong> Create a custom presence in D365 Admin Center → Productivity → Custom Presence with Base Status "Away".
+              Then copy the Presence ID (GUID) here.
+            </p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="dcaNotRunningPresenceId" class="text-input" 
+                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                   style="width: 100%; min-width: 300px; font-family: monospace;">
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="availablePresenceId">"Available" Presence ID (Optional)</label>
+            <p class="setting-description">
+              The GUID of the presence status to restore when DCA starts running again.<br>
+              Leave blank to use the system default "Available" presence.
+            </p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="availablePresenceId" class="text-input" 
+                   placeholder="Leave blank for default Available"
+                   style="width: 100%; min-width: 300px; font-family: monospace;">
+          </div>
+        </div>
+      </section>
+
       <!-- Detection -->
       <section class="settings-section">
         <h2 class="section-title">Detection Settings</h2>

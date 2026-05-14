@@ -39,10 +39,8 @@
       
       // Listen for messages from background
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === 'DCA_STATUS_UPDATE') {
-          this.updateStatus(message.status);
-        }
-        return true;
+        this.handleMessage(message, sendResponse);
+        return true; // Keep channel open for async response
       });
 
       // Observe DOM changes for voice elements
@@ -52,6 +50,126 @@
       this.startPolling();
       
       console.log('[DCA Checker] Content script initialized');
+    },
+
+    /**
+     * Handle messages from background script
+     */
+    async handleMessage(message, sendResponse) {
+      switch (message.type) {
+        case 'DCA_STATUS_UPDATE':
+          this.updateStatus(message.status);
+          sendResponse({ success: true });
+          break;
+          
+        case 'SYNC_PRESENCE':
+          const result = await this.syncPresenceToD365(message.presenceId, message.presenceName);
+          sendResponse(result);
+          break;
+          
+        default:
+          sendResponse({ error: 'Unknown message type' });
+      }
+    },
+
+    /**
+     * Sync agent presence to D365 using Web API
+     * Uses the CCaaS_ModifyAgentPresence custom API
+     */
+    async syncPresenceToD365(presenceId, presenceName) {
+      console.log(`[DCA Checker] Syncing presence: ${presenceName} (${presenceId})`);
+      
+      try {
+        // Get current user's system user ID
+        const userId = await this.getCurrentUserId();
+        if (!userId) {
+          console.warn('[DCA Checker] Could not get current user ID');
+          return { success: false, error: 'Could not get current user ID' };
+        }
+        
+        console.log(`[DCA Checker] Current user ID: ${userId}`);
+        
+        // Call the CCaaS_ModifyAgentPresence API
+        const apiUrl = '/api/data/v9.2/CCaaS_ModifyAgentPresence';
+        const payload = {
+          ApiVersion: '1.0',
+          AgentId: userId,
+          PresenceId: presenceId
+        };
+        
+        console.log('[DCA Checker] Calling CCaaS_ModifyAgentPresence:', payload);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+        
+        if (response.ok || response.status === 204) {
+          console.log(`[DCA Checker] Presence synced successfully to: ${presenceName}`);
+          return { success: true, presenceName: presenceName };
+        } else {
+          const errorText = await response.text();
+          console.error(`[DCA Checker] Presence sync failed: ${response.status}`, errorText);
+          return { success: false, error: `API error: ${response.status}` };
+        }
+      } catch (error) {
+        console.error('[DCA Checker] Error syncing presence:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    /**
+     * Get the current user's system user ID from D365
+     */
+    async getCurrentUserId() {
+      try {
+        // Try Xrm.Utility first (faster, available in model-driven apps)
+        if (typeof Xrm !== 'undefined' && Xrm.Utility && Xrm.Utility.getGlobalContext) {
+          const context = Xrm.Utility.getGlobalContext();
+          const userId = context.userSettings?.userId;
+          if (userId) {
+            // Remove braces if present
+            return userId.replace(/[{}]/g, '').toLowerCase();
+          }
+        }
+        
+        // Try window.parent (for embedded forms/iframes)
+        if (window.parent !== window && typeof window.parent.Xrm !== 'undefined') {
+          const parentContext = window.parent.Xrm.Utility?.getGlobalContext?.();
+          const userId = parentContext?.userSettings?.userId;
+          if (userId) {
+            return userId.replace(/[{}]/g, '').toLowerCase();
+          }
+        }
+        
+        // Fallback: Call WhoAmI API
+        const response = await fetch('/api/data/v9.2/WhoAmI', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0'
+          },
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          return data.UserId?.toLowerCase();
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('[DCA Checker] Error getting user ID:', error);
+        return null;
+      }
     },
 
     /**

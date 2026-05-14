@@ -1147,6 +1147,68 @@ Restart your browser after installation.
 
 > **💡 Recommendation:** For production environments, always use **Strict** enforcement. This guarantees DCA is running before ANY D365 page loads - eliminating the risk of calls being routed to agents without DCA protection.
 
+### D365 Integration (Presence Sync)
+
+The extension can automatically update agent presence in Dynamics 365 based on DCA status. When DCA stops, the agent's presence is set to a custom "DCA Not Running" status (mapped to "Away"), preventing new work items from being routed. When DCA starts again, presence is restored to "Available".
+
+#### Setup Steps
+
+1. **Create Custom Presence in D365:**
+   - Navigate to **Copilot Service admin center** → Agent experience → Productivity → **Custom Presence**
+   - Click **New** and configure:
+     - **Name:** Away - DCA Not Running
+     - **Presence Text:** DCA Not Running
+     - **Base Status:** Away
+   - Save and copy the **Presence ID** (GUID) from the URL or record
+
+2. **Configure Extension:**
+   - Open extension Settings → D365 Integration section
+   - Enable **Presence Sync**
+   - Paste the **DCA Not Running Presence ID**
+   - (Optional) Configure a specific **Available Presence ID** to restore
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    PRESENCE SYNC FLOW                                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  DCA STOPS:                                                             │
+│  ┌──────────────┐      ┌────────────────┐      ┌───────────────────┐   │
+│  │  Extension   │ ───► │ CCaaS_Modify   │ ───► │ Agent status =    │   │
+│  │  detects     │      │ AgentPresence  │      │ "Away - DCA Not   │   │
+│  │  DCA stopped │      │ API            │      │ Running"          │   │
+│  └──────────────┘      └────────────────┘      └───────────────────┘   │
+│                                                                         │
+│  RESULT: Agent is unavailable for routing, supervisor sees status      │
+│                                                                         │
+│  DCA STARTS:                                                            │
+│  ┌──────────────┐      ┌────────────────┐      ┌───────────────────┐   │
+│  │  Extension   │ ───► │ CCaaS_Modify   │ ───► │ Agent status =    │   │
+│  │  detects     │      │ AgentPresence  │      │ "Available"       │   │
+│  │  DCA started │      │ API            │      │                   │   │
+│  └──────────────┘      └────────────────┘      └───────────────────┘   │
+│                                                                         │
+│  RESULT: Agent is ready to receive work items again                     │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Benefits
+
+| Feature | Benefit |
+|---------|---------|
+| **Automatic routing stop** | No new calls routed to agents without DCA |
+| **Supervisor visibility** | "DCA Not Running" status visible in dashboards |
+| **History tracking** | Presence changes logged in `msdyn_agentstatushistory` |
+| **No new tables** | Uses existing D365 presence infrastructure |
+| **Self-healing** | Automatically restores "Available" when DCA starts |
+
+#### Requirements
+
+- Agent must be logged into D365 Contact Center (active session)
+- Extension has access to D365 page context for Web API calls
+- Custom presence must be created by D365 administrator
+
 ---
 
 ## 🏢 Enterprise Deployment

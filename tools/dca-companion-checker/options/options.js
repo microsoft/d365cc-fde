@@ -35,6 +35,10 @@ class OptionsController {
       blockPresenceChange: document.getElementById('blockPresenceChange'),
       logNonCompliance: document.getElementById('logNonCompliance'),
       autoLaunchDCA: document.getElementById('autoLaunchDCA'),
+      // D365 Integration
+      enablePresenceSync: document.getElementById('enablePresenceSync'),
+      dcaNotRunningPresenceId: document.getElementById('dcaNotRunningPresenceId'),
+      availablePresenceId: document.getElementById('availablePresenceId'),
       // Detection
       dcaProcessName: document.getElementById('dcaProcessName'),
       dcaDisplayName: document.getElementById('dcaDisplayName'),
@@ -82,6 +86,10 @@ class OptionsController {
       requireAcknowledgment: true,
       logNonCompliance: true,
       autoLaunchDCA: false,
+      // D365 Integration
+      enablePresenceSync: false,
+      dcaNotRunningPresenceId: '',
+      availablePresenceId: '',
       // Detection - DCA Configuration
       dcaProcessName: 'Microsoft.Dynamics.DCA',
       dcaDisplayName: 'Desktop Companion Application',
@@ -118,6 +126,11 @@ class OptionsController {
     this.elements.blockPresenceChange.checked = blockPresenceChange !== false;
     this.elements.logNonCompliance.checked = logNonCompliance !== false;
     this.elements.autoLaunchDCA.checked = autoLaunchDCA === true;
+    // D365 Integration
+    const { enablePresenceSync, dcaNotRunningPresenceId, availablePresenceId } = this.settings;
+    this.elements.enablePresenceSync.checked = enablePresenceSync === true;
+    this.elements.dcaNotRunningPresenceId.value = dcaNotRunningPresenceId || '';
+    this.elements.availablePresenceId.value = availablePresenceId || '';
     // Detection
     this.elements.dcaProcessName.value = dcaProcessName || 'Microsoft.Dynamics.DCA';
     this.elements.dcaDisplayName.value = dcaDisplayName || 'Desktop Companion Application';
@@ -185,6 +198,10 @@ class OptionsController {
       requireAcknowledgment: enforcementFlags.requireAcknowledgment,
       logNonCompliance: this.elements.logNonCompliance.checked,
       autoLaunchDCA: this.elements.autoLaunchDCA.checked,
+      // D365 Integration
+      enablePresenceSync: this.elements.enablePresenceSync.checked,
+      dcaNotRunningPresenceId: this.elements.dcaNotRunningPresenceId.value.trim(),
+      availablePresenceId: this.elements.availablePresenceId.value.trim(),
       // Detection - DCA Configuration
       dcaProcessName: this.elements.dcaProcessName.value.trim() || 'Microsoft.Dynamics.DCA',
       dcaDisplayName: this.elements.dcaDisplayName.value.trim() || 'Desktop Companion Application',
