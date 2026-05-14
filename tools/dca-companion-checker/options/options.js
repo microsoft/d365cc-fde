@@ -75,7 +75,7 @@ class OptionsController {
       showPageIndicator: true,
       indicatorPosition: 'bottom-right',
       // Enforcement Mode - STRICT BY DEFAULT
-      d365Url: 'https://adatum.crm.dynamics.com/',
+      d365Url: '*.crm.dynamics.com',
       enforcementLevel: 'strict',
       blockPresenceChange: true,
       showBlockingModal: true,
@@ -113,7 +113,7 @@ class OptionsController {
     this.elements.showPageIndicator.checked = showPageIndicator !== false;
     this.elements.indicatorPosition.value = indicatorPosition || 'bottom-right';
     // Enforcement Mode
-    this.elements.d365Url.value = d365Url || 'https://adatum.crm.dynamics.com/';
+    this.elements.d365Url.value = d365Url || '*.crm.dynamics.com';
     this.elements.enforcementLevel.value = enforcementLevel || 'strict';
     this.elements.blockPresenceChange.checked = blockPresenceChange !== false;
     this.elements.showBlockingModal.checked = showBlockingModal !== false;
@@ -147,7 +147,7 @@ class OptionsController {
       showPageIndicator: this.elements.showPageIndicator.checked,
       indicatorPosition: this.elements.indicatorPosition.value,
       // Enforcement Mode
-      d365Url: this.elements.d365Url.value.trim() || 'https://adatum.crm.dynamics.com/',
+      d365Url: this.elements.d365Url.value.trim() || '*.crm.dynamics.com',
       enforcementLevel: this.elements.enforcementLevel.value,
       blockPresenceChange: this.elements.blockPresenceChange.checked,
       showBlockingModal: this.elements.showBlockingModal.checked,

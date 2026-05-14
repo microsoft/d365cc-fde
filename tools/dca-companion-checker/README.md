@@ -770,7 +770,7 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 **🔒 Enforcement Mode Settings (MOST IMPORTANT):**
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **D365 Contact Center URL** | **YOUR ORG'S URL - extension blocks this page until DCA running** | **https://adatum.crm.dynamics.com/** |
+| **D365 Contact Center URL** | **URL pattern to block until DCA running (supports wildcards)** | **\*.crm.dynamics.com** |
 | Enforcement Level | None (warn) / Soft (require ack) / **Strict (block page)** | **Strict** |
 | Block Presence Change | Prevent "Available" status without DCA | **On** |
 | Show Blocking Modal | Full-screen modal until DCA running | **On** |
@@ -778,7 +778,15 @@ Chrome's Alarm API is specifically designed for battery efficiency.
 | Log Non-Compliance | Record when agents work without DCA | On |
 | Auto-Launch DCA | Automatically try to start DCA | Off |
 
-> **⚠️ IMPORTANT:** Change the D365 URL to your organization's actual URL (e.g., `https://yourorg.crm.dynamics.com/`). This is the page that will be blocked until DCA is verified running.
+**URL Pattern Examples (supports wildcards):**
+| Pattern | Matches |
+|---------|---------|
+| `*.crm.dynamics.com` | Any CRM subdomain (adatum.crm.dynamics.com, contoso.crm.dynamics.com) |
+| `adatum.crm.dynamics.com/*` | Any path on adatum org |
+| `https://adatum.crm.dynamics.com/` | Exact URL only |
+| `*adatum*` | Any URL containing "adatum" |
+
+> **💡 TIP:** Use `*.crm.dynamics.com` to block ALL Dynamics CRM pages until DCA is running.
 
 **🔧 Detection Settings (Configurable):**
 | Setting | Description | Default |

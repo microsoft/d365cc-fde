@@ -428,7 +428,7 @@ export class DCADetector {
   getDefaultSettings() {
     return {
       // D365 Contact Center URL
-      d365Url: 'https://adatum.crm.dynamics.com/',
+      d365Url: '*.crm.dynamics.com',
       // Enforcement - STRICT BY DEFAULT
       enforcementLevel: 'strict',
       blockPresenceChange: true,

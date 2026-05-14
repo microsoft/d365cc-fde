@@ -127,12 +127,16 @@
         <div class="setting-item" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px;">
           <div class="setting-info">
             <label class="setting-label" for="d365Url">D365 Contact Center URL</label>
-            <p class="setting-description"><strong>IMPORTANT:</strong> Your organization's D365 Contact Center URL. The extension will block this page from loading until DCA is running (in Strict mode).</p>
+            <p class="setting-description"><strong>IMPORTANT:</strong> Your organization's D365 Contact Center URL. Supports wildcards (*). Examples:<br>
+              <code style="background:#f5f5f5; padding:2px 4px;">*.crm.dynamics.com</code> - any subdomain<br>
+              <code style="background:#f5f5f5; padding:2px 4px;">adatum.crm.dynamics.com/*</code> - any path<br>
+              <code style="background:#f5f5f5; padding:2px 4px;">https://adatum.crm.dynamics.com/</code> - exact URL
+            </p>
           </div>
           <div class="setting-control">
             <input type="text" id="d365Url" class="text-input" 
-                   value="https://adatum.crm.dynamics.com/" 
-                   placeholder="https://yourorg.crm.dynamics.com/"
+                   value="*.crm.dynamics.com" 
+                   placeholder="*.crm.dynamics.com or yourorg.crm.dynamics.com"
                    style="width: 100%; min-width: 300px;">
           </div>
         </div>

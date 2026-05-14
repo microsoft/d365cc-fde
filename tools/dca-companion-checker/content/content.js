@@ -131,23 +131,56 @@
     },
 
     /**
-     * Check if current URL matches the target D365 URL
+     * Check if current URL matches the target D365 URL pattern
+     * Supports wildcards: *.crm.dynamics.com, adatum.crm.dynamics.com/*, *adatum*
      */
     checkTargetUrl() {
       const currentUrl = window.location.href.toLowerCase();
-      const targetUrl = (this.settings.d365Url || '').toLowerCase();
+      const pattern = (this.settings.d365Url || '').toLowerCase().trim();
       
-      if (!targetUrl) return true; // If no target set, apply to all D365 pages
+      if (!pattern) return true; // If no target set, apply to all D365 pages
       
-      // Extract domain from target URL
+      // Convert glob pattern to regex
+      // * matches any characters, ? matches single character
+      const globToRegex = (glob) => {
+        let regex = glob
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape special regex chars except * and ?
+          .replace(/\*/g, '.*')                  // * -> .*
+          .replace(/\?/g, '.');                  // ? -> .
+        return new RegExp('^' + regex + '$', 'i');
+      };
+      
+      // Try different matching strategies
       try {
-        const targetDomain = new URL(targetUrl).hostname;
-        const currentDomain = window.location.hostname;
-        return currentDomain.includes(targetDomain) || targetDomain.includes(currentDomain);
+        // If pattern contains ://, treat as full URL pattern
+        if (pattern.includes('://')) {
+          const regex = globToRegex(pattern);
+          if (regex.test(currentUrl)) return true;
+          
+          // Also try without trailing slash differences
+          const normalizedCurrent = currentUrl.replace(/\/$/, '');
+          const normalizedPattern = pattern.replace(/\/$/, '');
+          if (globToRegex(normalizedPattern).test(normalizedCurrent)) return true;
+        }
+        
+        // If pattern looks like just a hostname (with or without wildcards)
+        // e.g., "*.crm.dynamics.com" or "adatum.crm.dynamics.com"
+        const hostname = window.location.hostname.toLowerCase();
+        const hostPattern = pattern.replace(/^https?:\/\//, '').split('/')[0];
+        if (globToRegex(hostPattern).test(hostname)) return true;
+        
+        // Simple contains check as fallback
+        const cleanPattern = pattern.replace(/^https?:\/\//, '').replace(/\*/g, '');
+        if (cleanPattern && currentUrl.includes(cleanPattern)) return true;
+        
       } catch (e) {
-        // If URL parsing fails, do simple string match
-        return currentUrl.includes(targetUrl.replace('https://', '').replace('http://', ''));
+        console.warn('[DCA Checker] URL pattern matching error:', e);
+        // Fallback: simple contains check
+        const cleanPattern = pattern.replace(/^https?:\/\//, '').replace(/\*/g, '');
+        return cleanPattern && currentUrl.includes(cleanPattern);
       }
+      
+      return false;
     },
 
     /**
@@ -171,7 +204,7 @@
         showWarningBanner: true,
         indicatorPosition: 'bottom-right',
         // Enforcement defaults - STRICT BY DEFAULT
-        d365Url: 'https://adatum.crm.dynamics.com/',
+        d365Url: '*.crm.dynamics.com',
         enforcementLevel: 'strict',
         blockPresenceChange: true,
         showBlockingModal: true,
