@@ -72,8 +72,8 @@
     getDefaultSettings() {
       return {
         showPageIndicator: true,
-        showWarningBanner: true,
         indicatorPosition: 'bottom-right',
+        enforcementLevel: 'strict',
         blockPresenceChange: true,
         logNonCompliance: true
       };
@@ -239,9 +239,12 @@
         }
       }
 
-      // Show warning banner if not running and on voice page
-      if (!isRunning && this.isVoicePage && this.settings.showWarningBanner) {
-        this.showWarningBanner();
+      // Show warning banner based on enforcement level
+      // Note: 'strict' mode blocks at navigation level, so content script only runs in 'soft' or 'none' modes
+      const enforcementLevel = this.settings.enforcementLevel || 'strict';
+      
+      if (!isRunning && (enforcementLevel === 'soft' || enforcementLevel === 'none')) {
+        this.showWarningBanner(enforcementLevel);
       } else {
         this.hideWarningBanner();
       }
@@ -327,38 +330,82 @@
 
     /**
      * Show warning banner at top of page
+     * @param {string} enforcementLevel - 'none' or 'soft'
      */
-    showWarningBanner() {
+    showWarningBanner(enforcementLevel = 'soft') {
       let banner = document.querySelector('.dca-warning-banner');
+      
+      // Remove existing banner if enforcement level changed
+      if (banner && banner.dataset.enforcementLevel !== enforcementLevel) {
+        banner.remove();
+        banner = null;
+      }
       
       if (!banner) {
         banner = document.createElement('div');
         banner.className = 'dca-warning-banner';
+        banner.dataset.enforcementLevel = enforcementLevel;
+        
+        const requiresAcknowledgment = enforcementLevel === 'soft';
+        
         banner.innerHTML = `
           <div class="dca-banner-content">
             <span class="dca-banner-icon">⚠️</span>
             <span class="dca-banner-text">
               <strong>Desktop Companion Application is not running.</strong>
-              Voice calls may experience issues. 
-              <a href="#" class="dca-banner-link">Launch DCA</a>
+              Voice calls may drop if your browser closes unexpectedly.
             </span>
-            <button class="dca-banner-close">&times;</button>
+            <div class="dca-banner-actions">
+              <button class="dca-banner-btn dca-banner-launch">Launch DCA</button>
+              ${requiresAcknowledgment 
+                ? '<button class="dca-banner-btn dca-banner-acknowledge">I Understand the Risk</button>' 
+                : '<button class="dca-banner-btn dca-banner-dismiss">Dismiss</button>'
+              }
+            </div>
           </div>
         `;
         
-        banner.querySelector('.dca-banner-link').addEventListener('click', (e) => {
+        banner.querySelector('.dca-banner-launch').addEventListener('click', (e) => {
           e.preventDefault();
           this.launchDCA();
         });
         
-        banner.querySelector('.dca-banner-close').addEventListener('click', () => {
-          banner.classList.add('dismissed');
-        });
+        if (requiresAcknowledgment) {
+          banner.querySelector('.dca-banner-acknowledge').addEventListener('click', () => {
+            this.logAcknowledgment();
+            banner.classList.add('dismissed');
+          });
+        } else {
+          banner.querySelector('.dca-banner-dismiss').addEventListener('click', () => {
+            banner.classList.add('dismissed');
+          });
+        }
         
         document.body.insertBefore(banner, document.body.firstChild);
       }
       
       banner.classList.remove('hidden', 'dismissed');
+    },
+
+    /**
+     * Log acknowledgment for compliance
+     */
+    async logAcknowledgment() {
+      if (this.settings.logNonCompliance) {
+        try {
+          await chrome.runtime.sendMessage({
+            type: 'LOG_NON_COMPLIANCE',
+            event: {
+              type: 'ACKNOWLEDGED_RISK',
+              timestamp: new Date().toISOString(),
+              url: window.location.href
+            }
+          });
+          console.log('[DCA Checker] Risk acknowledgment logged');
+        } catch (error) {
+          console.error('[DCA Checker] Failed to log acknowledgment:', error);
+        }
+      }
     },
 
     /**
