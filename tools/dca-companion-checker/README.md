@@ -60,33 +60,46 @@ The **Desktop Companion Application (DCA)** is a Windows desktop application tha
 - **Network Resilience**: Handles network hiccups more gracefully than WebRTC alone
 - **OS-Level Integration**: System-level audio routing, hardware headset controls
 
-### The Hidden Crisis
+### The Real Problem
 
-Here's the painful reality in contact centers today:
+DCA is typically configured to **auto-start** with Windows or when D365 Contact Center opens. However, there are scenarios where DCA may not be running when agents go online:
 
 ```
 +-------------------------------------------------------------------------+
-|                        THE AGENT'S NIGHTMARE                            |
+|                     WHEN DCA FAILS TO START                             |
 +-------------------------------------------------------------------------+
 |                                                                         |
-|   8:00 AM   Agent logs into D365 Contact Center                         |
-|             [X] Forgets to start Desktop Companion App                  |
+|  Scenario 1: Auto-start fails                                           |
+|    - Windows startup items disabled by IT policy                        |
+|    - DCA process crashed during startup                                 |
+|    - Antivirus/security software blocked launch                         |
 |                                                                         |
-|   8:15 AM   First call comes in - Agent accepts                         |
-|             [!] Call working, but no safety net                         |
+|  Scenario 2: Mid-shift issues                                           |
+|    - DCA crashes due to memory/resource issues                          |
+|    - Windows update forces restart of DCA                               |
+|    - Agent accidentally closes DCA                                      |
 |                                                                         |
-|   8:32 AM   Browser freezes during complex lookup                       |
-|             [!!] CALL DROPPED - Customer hears silence                  |
-|             Customer hangs up, calls back angry                         |
-|             CSAT score tanks, AHT increases                             |
+|  Scenario 3: New machine / reinstall                                    |
+|    - DCA not yet installed on new workstation                           |
+|    - Auto-start not configured after reinstall                          |
 |                                                                         |
-|   8:35 AM   Supervisor asks: "Why did you drop that call?"              |
-|             Agent: "I didn't know DCA wasn't running..."                |
+|  THE REAL ISSUE:                                                        |
+|  Omnichannel loads and sets agent presence to "Available" BEFORE        |
+|  verifying DCA is running. Calls start routing to the agent without     |
+|  the safety net of DCA.                                                 |
 |                                                                         |
 +-------------------------------------------------------------------------+
 ```
 
-### The Statistics That Keep Managers Up at Night
+### Why This Extension Exists
+
+The problem isn't that agents forget to start DCA - it's that **D365 Contact Center doesn't verify DCA is running before allowing agents to go online**. 
+
+This extension fills that gap by:
+
+1. **Blocking page load** until DCA is confirmed running (strict mode)
+2. **Preventing presence changes** to "Available" without DCA
+3. **Warning agents** if DCA stops running mid-shift
 
 | Metric | Impact Without DCA |
 |--------|-------------------|
@@ -96,13 +109,15 @@ Here's the painful reality in contact centers today:
 | **CSAT Impact** | Dropped calls reduce CSAT by 15-20 points |
 | **Agent Frustration** | Leading cause of "technology doesn't work" complaints |
 
-### Why Do Agents Forget?
+### The Gap in D365 Contact Center
 
-1. **No Visual Reminder**: D365 doesn't warn you if DCA isn't running
-2. **Silent Failure**: Calls still work (until they don't)
-3. **Multiple Applications**: Agents manage 5-10 apps; DCA gets lost
-4. **Shift Handoffs**: "Did you start DCA?" isn't in the checklist
-5. **Remote Work**: IT can't physically check agent setups
+1. **No Pre-Check**: Omnichannel loads and sets presence without verifying DCA
+2. **Silent Failure**: Calls route to agents even when DCA isn't running  
+3. **No Auto-Recovery**: If DCA crashes mid-shift, no automatic warning
+4. **Background Loading**: Presence is set before agents realize DCA isn't ready
+5. **No Blocking**: Nothing prevents agents from going "Available" without DCA
+
+**This extension closes those gaps.**
 
 ---
 
@@ -191,53 +206,89 @@ The frustrating part? **DCA installation isn't the problem**. Most organizations
 | **Visual Alerts** | Toolbar badge, page indicator, and warning banners |
 | **Smart Notifications** | Alerts when DCA stops (not annoying spam) |
 | **One-Click Launch** | Start DCA directly from the extension |
-| **Zero Configuration** | Works out of the box for most setups |
+| **Presence Blocking** | Prevents "Available" status without DCA |
+| **Page Load Blocking** | Strict mode blocks omnichannel until DCA verified |
 
 ---
 
 ## 👤 User Journey Scenarios
 
-### Scenario 1: Agent Forgets to Start DCA
+### Scenario 1: DCA Auto-Start Failed (Strict Mode)
 
 ```
-Timeline: Agent Morning Shift Start
+Timeline: DCA Failed to Auto-Start
 ============================================================================
 
 08:00  Agent opens Edge, navigates to D365 Contact Center
        |
        v
-       +--------------------------------------------------------------+
-       |  [RED] Extension Badge: Red exclamation mark                 |
-       |  Page Indicator: "DCA Not Running" (bottom-right)            |
-       |  Warning Banner: "Start DCA before accepting calls"          |
-       +--------------------------------------------------------------+
-       |
-       v
-08:01  Agent notices warning --> Clicks "Launch DCA" button
+       Omnichannel tries to load and set presence to Available...
        |
        v
        +--------------------------------------------------------------+
-       |  [YELLOW] Extension Badge: Checking...                       |
-       |  Page Indicator: "Connecting..."                             |
+       |  [BLOCKED] Full-screen modal appears:                        |
+       |                                                              |
+       |    "Desktop Companion Application Required"                   |
+       |                                                              |
+       |    You must start DCA before handling voice calls.           |
+       |    This prevents dropped calls if browser issues occur.      |
+       |                                                              |
+       |    [Launch DCA Now]    [Check Again]                         |
+       |                                                              |
        +--------------------------------------------------------------+
        |
        v
-08:02  DCA starts and connects
+08:01  Agent clicks "Launch DCA Now"
+       |
+       v
+       DCA starts, extension verifies it's running
        |
        v
        +--------------------------------------------------------------+
-       |  [GREEN] Extension Badge: Green checkmark                    |
-       |  Page Indicator: "DCA Running"                               |
-       |  Notification: "DCA is now running"                          |
+       |  [GREEN] Modal disappears                                    |
+       |  Page loads normally                                         |
+       |  Agent presence can now be set to Available                  |
        +--------------------------------------------------------------+
-       |
-       v
-08:03  Agent sets status to "Available" - confident calls are protected
 
-RESULT: Agent protected before any calls accepted [OK]
+RESULT: Agent cannot receive calls until DCA is verified [OK]
 ```
 
-### Scenario 2: DCA Crashes Mid-Shift
+### Scenario 2: Presence Change Blocked (Soft Mode)
+
+```
+Timeline: Agent Tries to Go Online Without DCA
+============================================================================
+
+08:00  Agent opens D365, DCA is not running
+       |
+       v
+       Page loads with warning banner (soft mode doesn't block page)
+       |
+       v
+08:01  Agent tries to click "Available" status
+       |
+       v
+       +--------------------------------------------------------------+
+       |  [BLOCKED] Click intercepted!                                |
+       |                                                              |
+       |  "Cannot change to Available - DCA is not running"          |
+       |  [Launch DCA]                                                |
+       |                                                              |
+       +--------------------------------------------------------------+
+       |
+       v
+08:02  Agent clicks "Launch DCA", waits for it to start
+       |
+       v
+       +--------------------------------------------------------------+
+       |  [GREEN] DCA now running                                     |
+       |  Agent can now set presence to Available                     |
+       +--------------------------------------------------------------+
+
+RESULT: Agent cannot go online until DCA is running [OK]
+```
+
+### Scenario 3: DCA Crashes Mid-Shift
 
 ```
 Timeline: DCA Unexpected Crash
@@ -268,33 +319,7 @@ Timeline: DCA Unexpected Crash
 RESULT: Agent warned in <1 minute, no calls at risk [OK]
 ```
 
-### Scenario 3: Voice Call Page Detection
-
-```
-Timeline: Enhanced Warning on Voice Pages
-============================================================================
-
-09:15  Agent has DCA not running (hasn't noticed yet)
-       |
-       v
-09:16  Agent opens a conversation with voice channel active
-       |
-       v
-       +--------------------------------------------------------------+
-       |  [!!] FULL-WIDTH WARNING BANNER (top of page)                |
-       |  +----------------------------------------------------------+|
-       |  | DCA Not Running - Voice calls at risk!                   ||
-       |  |     Click here to start DCA  [Launch Now] [Dismiss]      ||
-       |  +----------------------------------------------------------+|
-       +--------------------------------------------------------------+
-       |
-       v
-09:16  Agent can't miss it --> Starts DCA before accepting call
-
-RESULT: Context-aware warning prevents risky call acceptance [OK]
-```
-
-### Scenario 4: Supervisor Dashboard View
+### Scenario 4: Supervisor Verification
 
 ```
 Timeline: IT/Supervisor Verification
@@ -313,7 +338,6 @@ Any Time  Supervisor asks: "Is your DCA running?"
           |  |     Status: Running                                  ||
           |  |     Detected via: Native Messaging                   ||
           |  |     Last Check: 2 seconds ago                        ||
-          |  |     Uptime: 3h 45m                                   ||
           |  +------------------------------------------------------+|
           |  +------------------------------------------------------+|
           |  |  [Check Now]              [Settings]                 ||
@@ -778,33 +802,34 @@ ENFORCEMENT LEVELS
 ------------------
 
 NONE (Warning Only)
-  - Shows warning banner (dismissible with X)
+  - Shows warning banner (dismissible)
   - Shows red status indicator
   - Sends notifications
-  - Agent can dismiss and continue working
-  - NO blocking of any functionality
+  - Agent CAN dismiss and work without DCA
+  - Omnichannel loads normally
+  - Presence changes allowed
 
 SOFT (Require Acknowledgment) <-- DEFAULT
-  - Warning banner with "I Understand the Risk" button
-  - Agent MUST acknowledge before dismissing
-  - Acknowledgment is logged for audit
-  - Red status indicator persists
-  - Agent can still work after acknowledgment
+  - Warning banner requires "I Understand the Risk" click
+  - Blocks presence change to "Available" until DCA running
+  - Agent must acknowledge risk before dismissing
+  - Acknowledgment logged for audit
+  - Omnichannel loads but presence blocked
 
-STRICT (Full Blocking)
-  - Full-screen modal overlay
+STRICT (Full Blocking) <-- RECOMMENDED FOR ENTERPRISES
+  - Full-screen modal blocks ALL page interaction
   - CANNOT be dismissed until DCA is running
-  - Blocks all interaction with page
+  - Omnichannel CANNOT load until DCA verified
+  - Agent CANNOT go online without DCA
   - Only options: Launch DCA or Check Again
-  - Maximum enforcement for compliance-critical environments
 ```
 
 ### Block Presence Change Feature
 
-When enabled, this feature prevents agents from setting their presence to "Available" without DCA running:
+**This is the key feature.** When Omnichannel loads, it may automatically try to set agent presence. This feature intercepts that:
 
 ```
-Agent clicks "Available" status
+Omnichannel loads / Agent clicks "Available"
          |
          v
 +-----------------------------+
