@@ -1,0 +1,90 @@
+{
+  "manifest_version": 3,
+  "name": "D365 Contact Center - DCA Companion Checker",
+  "short_name": "DCA Checker",
+  "version": "1.0.0",
+  "description": "Ensures the Dynamics 365 Contact Center Desktop Companion Application (DCA) is running before agents handle voice calls. Provides real-time status monitoring and seamless integration with the Copilot Service workspace.",
+  "author": "D365 Contact Center Tools",
+  "icons": {
+    "16": "icons/d365logo.png",
+    "32": "icons/d365logo.png",
+    "48": "icons/d365logo.png",
+    "128": "icons/d365logo.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/d365logo.png",
+      "32": "icons/d365logo.png",
+      "48": "icons/d365logo.png",
+      "128": "icons/d365logo.png"
+    },
+    "default_title": "DCA Companion Checker"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.dynamics.com/*",
+        "*://*.crm.dynamics.com/*",
+        "*://*.crm2.dynamics.com/*",
+        "*://*.crm3.dynamics.com/*",
+        "*://*.crm4.dynamics.com/*",
+        "*://*.crm5.dynamics.com/*",
+        "*://*.crm6.dynamics.com/*",
+        "*://*.crm7.dynamics.com/*",
+        "*://*.crm8.dynamics.com/*",
+        "*://*.crm9.dynamics.com/*",
+        "*://*.crm11.dynamics.com/*",
+        "*://*.crm12.dynamics.com/*",
+        "*://*.crm14.dynamics.com/*",
+        "*://*.crm15.dynamics.com/*",
+        "*://*.crm16.dynamics.com/*",
+        "*://*.crm17.dynamics.com/*",
+        "*://*.crm19.dynamics.com/*",
+        "*://*.crm20.dynamics.com/*",
+        "*://*.crm21.dynamics.com/*"
+      ],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "*://*.dynamics.com/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*", "assets/*"],
+      "matches": ["*://*.dynamics.com/*"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+D",
+        "mac": "Command+Shift+D"
+      },
+      "description": "Open DCA Checker popup"
+    },
+    "check-dca-status": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+C",
+        "mac": "Command+Shift+C"
+      },
+      "description": "Quick check DCA status"
+    }
+  },
+  "options_page": "options/options.html"
+}

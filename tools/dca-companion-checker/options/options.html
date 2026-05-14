@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCA Checker - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="header">
+      <div class="header-content">
+        <h1 class="title">
+          <img src="../icons/d365logo.png" alt="Dynamics 365" class="logo">
+          DCA Checker Settings
+        </h1>
+        <p class="subtitle">Configure how the extension monitors the Desktop Companion Application</p>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- General Settings -->
+      <section class="settings-section">
+        <h2 class="section-title">General</h2>
+        
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="checkInterval">Check Interval</label>
+            <p class="setting-description">How often to check if DCA is running (in seconds)</p>
+          </div>
+          <div class="setting-control">
+            <select id="checkInterval" class="select-input">
+              <option value="15">15 seconds</option>
+              <option value="30" selected>30 seconds</option>
+              <option value="60">1 minute</option>
+              <option value="120">2 minutes</option>
+              <option value="300">5 minutes</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notifications -->
+      <section class="settings-section">
+        <h2 class="section-title">Notifications</h2>
+        
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="notifyOnStop">Notify When DCA Stops</label>
+            <p class="setting-description">Show a notification when DCA stops running</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="notifyOnStop" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="notifyOnStart">Notify When DCA Starts</label>
+            <p class="setting-description">Show a notification when DCA starts running</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="notifyOnStart" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Display -->
+      <section class="settings-section">
+        <h2 class="section-title">Display</h2>
+        
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="showBadge">Show Badge Icon</label>
+            <p class="setting-description">Display status indicator on extension icon</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="showBadge" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="showPageIndicator">Show Page Indicator</label>
+            <p class="setting-description">Display floating status indicator on D365 pages</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="showPageIndicator" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="indicatorPosition">Indicator Position</label>
+            <p class="setting-description">Where to show the floating indicator on the page</p>
+          </div>
+          <div class="setting-control">
+            <select id="indicatorPosition" class="select-input">
+              <option value="bottom-right" selected>Bottom Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="top-right">Top Right</option>
+              <option value="top-left">Top Left</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Enforcement Mode - NEW! -->
+      <section class="settings-section">
+        <h2 class="section-title">Enforcement Mode</h2>
+        <p class="section-description">
+          Control how strictly the extension enforces DCA requirements. These settings determine what happens when agents try to work without DCA running.
+        </p>
+        
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="enforcementLevel">Enforcement Level</label>
+            <p class="setting-description">How strictly to enforce DCA requirement</p>
+          </div>
+          <div class="setting-control">
+            <select id="enforcementLevel" class="select-input">
+              <option value="none">None - Warn only</option>
+              <option value="soft" selected>Soft - Warn + require acknowledgment</option>
+              <option value="strict">Strict - Block until DCA running</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="blockPresenceChange">Block Presence Change</label>
+            <p class="setting-description">Prevent agent from setting status to "Available" when DCA is not running</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="blockPresenceChange">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="showBlockingModal">Show Blocking Modal</label>
+            <p class="setting-description">Display a full-screen modal that cannot be dismissed until DCA is running</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="showBlockingModal">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="requireAcknowledgment">Require Acknowledgment</label>
+            <p class="setting-description">Agent must click "I understand the risk" to dismiss warning banner</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="requireAcknowledgment" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="logNonCompliance">Log Non-Compliance</label>
+            <p class="setting-description">Record when agents work without DCA (stored locally for audit)</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="logNonCompliance" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="autoLaunchDCA">Auto-Launch DCA</label>
+            <p class="setting-description">Automatically attempt to start DCA when not running (requires native host)</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="autoLaunchDCA">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Detection -->
+      <section class="settings-section">
+        <h2 class="section-title">Detection Settings</h2>
+        <p class="section-description">
+          Configure how the extension detects the Desktop Companion Application. Adjust these values if your organization uses a custom DCA configuration.
+        </p>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="dcaProcessName">DCA Process Name</label>
+            <p class="setting-description">Windows process name to detect (without .exe)</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="dcaProcessName" class="text-input" 
+                   value="Microsoft.Dynamics.DCA" 
+                   placeholder="Microsoft.Dynamics.DCA">
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="dcaDisplayName">DCA Display Name</label>
+            <p class="setting-description">Name shown in UI messages</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="dcaDisplayName" class="text-input" 
+                   value="Desktop Companion Application" 
+                   placeholder="Desktop Companion Application">
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="dcaPath">DCA Executable Path</label>
+            <p class="setting-description">Full path to DCA executable (for auto-launch)</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="dcaPath" class="text-input" 
+                   value="C:\\Program Files\\Microsoft\\Dynamics 365 Contact Center\\DCA\\Microsoft.Dynamics.DCA.exe" 
+                   placeholder="C:\\Program Files\\...\\DCA.exe">
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="ports">Local Server Ports</label>
+            <p class="setting-description">Ports to check for DCA local server (comma-separated)</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="ports" class="text-input" 
+                   value="9222, 9223, 9224, 9876, 12345" 
+                   placeholder="9222, 9223, 9224">
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="protocols">Protocol Handlers</label>
+            <p class="setting-description">Custom protocols to detect/launch DCA (comma-separated)</p>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="protocols" class="text-input" 
+                   value="ms-ccaas, msdyn-ccaas, d365-dca" 
+                   placeholder="ms-ccaas, msdyn-ccaas">
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="detectionTimeout">Detection Timeout</label>
+            <p class="setting-description">How long to wait for each detection method (milliseconds)</p>
+          </div>
+          <div class="setting-control">
+            <select id="detectionTimeout" class="select-input">
+              <option value="1000">1 second</option>
+              <option value="2000" selected>2 seconds</option>
+              <option value="3000">3 seconds</option>
+              <option value="5000">5 seconds</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Native Messaging -->
+      <section class="settings-section">
+        <h2 class="section-title">Native Messaging</h2>
+        <p class="section-description">
+          For best detection, install the native messaging host. This allows direct communication with DCA.
+        </p>
+        
+        <div class="native-setup">
+          <div class="native-status" id="nativeStatus">
+            <span class="status-icon">❓</span>
+            <span class="status-text">Checking native host status...</span>
+          </div>
+          <button class="btn btn-secondary" id="setupNativeBtn">Setup Native Host</button>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn btn-secondary" id="resetBtn">Reset to Defaults</button>
+        <button class="btn btn-primary" id="saveBtn">Save Settings</button>
+      </div>
+
+      <!-- Status Message -->
+      <div class="status-message hidden" id="statusMessage"></div>
+    </main>
+
+    <footer class="footer">
+      <p>D365 Contact Center - DCA Companion Checker v1.0.0</p>
+      <p>
+        <a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-dca-application" target="_blank">
+          Documentation
+        </a>
+        •
+        <a href="https://github.com/your-repo/d365cc-fde/issues" target="_blank">
+          Report Issue
+        </a>
+      </p>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
