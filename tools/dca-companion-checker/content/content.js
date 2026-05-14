@@ -1105,6 +1105,20 @@
      * Observe DOM changes for voice elements
      */
     observeDOMChanges() {
+      // Safety check - document.body may not exist at document_start
+      if (!document.body) {
+        // Wait for body to be available
+        const waitForBody = () => {
+          if (document.body) {
+            this.observeDOMChanges();
+          } else {
+            setTimeout(waitForBody, 50);
+          }
+        };
+        waitForBody();
+        return;
+      }
+
       const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -1137,8 +1151,10 @@
         'communication', 'telephony'
       ];
       
-      const className = element.className?.toLowerCase() || '';
-      const id = element.id?.toLowerCase() || '';
+      // Use getAttribute('class') instead of className to handle SVG elements
+      // SVG elements have className as SVGAnimatedString, not a regular string
+      const className = (element.getAttribute?.('class') || '').toLowerCase();
+      const id = (element.id || '').toLowerCase();
       
       for (const vc of voiceClasses) {
         if (className.includes(vc) || id.includes(vc)) {
