@@ -1,0 +1,15 @@
+# Runtime output files — generated during migration runs, never commit
+ra-objectids*.json
+agent-oids*.json
+acs-export*.json
+tpe-migration-results*.csv
+
+# Local backups
+backups/
+
+# Local config files with real credentials — never commit
+*-local.json
+new-acs-tpe-config-*.json
+
+# Session file written by Invoke-AcsTpeLogin.ps1 — contains identity/token metadata
+acs-tpe-session.json
