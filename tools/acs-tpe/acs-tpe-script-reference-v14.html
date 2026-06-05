@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACS TPE v14 — Script Reference Guide</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#1a1a1a;color:#d4d4d4;font-family:Segoe UI,system-ui,sans-serif;font-size:14px;line-height:1.6;padding:0}
+  a{color:#00bfff;text-decoration:none}a:hover{text-decoration:underline}
+  code,pre{font-family:Consolas,'Courier New',monospace}
+  /* Layout */
+  .sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:#111;overflow-y:auto;padding:20px 0;border-right:1px solid #2a2a2a;z-index:100}
+  .content{margin-left:230px;padding:40px 48px;max-width:960px}
+  /* Sidebar */
+  .sidebar-title{color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;padding:0 20px 12px;border-bottom:1px solid #222;margin-bottom:12px}
+  .sidebar a{display:block;padding:5px 20px;color:#888;font-size:13px;border-left:3px solid transparent;transition:all .15s}
+  .sidebar a:hover{color:#d4d4d4;background:#1a1a1a;border-left-color:#00bfff;text-decoration:none}
+  .sidebar .sec{color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:14px 20px 4px;margin-top:4px}
+  /* Headings */
+  h1{color:#fff;font-size:24px;font-weight:600;margin-bottom:6px}
+  h2{color:#00bfff;font-size:17px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid #2a2a2a}
+  h3{color:#e0e0e0;font-size:14px;font-weight:600;margin:24px 0 10px}
+  h4{color:#aaa;font-size:13px;font-weight:600;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  /* Subtitle */
+  .sub{color:#555;font-size:12px;margin-bottom:32px}
+  /* Badges */
+  .badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.5px;font-family:Consolas,monospace}
+  .badge-blue{background:#1a3a4a;color:#00bfff;border:1px solid #00bfff44}
+  .badge-green{background:#1a3a1a;color:#4ec94e;border:1px solid #4ec94e44}
+  .badge-red{background:#3a1a1a;color:#ff6b6b;border:1px solid #ff6b6b44}
+  .badge-yellow{background:#3a3a1a;color:#ffd700;border:1px solid #ffd70044}
+  .badge-gray{background:#252525;color:#888;border:1px solid #44444444}
+  /* Cards */
+  .card{background:#222;border:1px solid #2e2e2e;border-radius:6px;padding:20px 24px;margin:16px 0}
+  .card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .card-title{color:#fff;font-size:15px;font-weight:600;font-family:Consolas,monospace}
+  /* Steps */
+  .steps{list-style:none;padding:0;margin:0}
+  .steps li{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #252525}
+  .steps li:last-child{border-bottom:none}
+  .step-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#1a3a4a;border:1px solid #00bfff55;color:#00bfff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:Consolas,monospace}
+  .step-num.green{background:#1a3a1a;border-color:#4ec94e55;color:#4ec94e}
+  .step-num.red{background:#3a1a1a;border-color:#ff6b6b55;color:#ff6b6b}
+  .step-num.yellow{background:#3a3a1a;border-color:#ffd70055;color:#ffd700}
+  .step-body{flex:1}
+  .step-name{color:#e0e0e0;font-weight:600;font-size:13px;margin-bottom:3px}
+  .step-desc{color:#888;font-size:12px}
+  /* Params */
+  .param-table{width:100%;border-collapse:collapse;margin:12px 0}
+  .param-table th{background:#1e1e1e;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:8px 12px;text-align:left;border-bottom:1px solid #2e2e2e}
+  .param-table td{padding:8px 12px;border-bottom:1px solid #222;font-size:12px;vertical-align:top}
+  .param-table td:first-child{color:#00bfff;font-family:Consolas,monospace;white-space:nowrap}
+  .param-table td:nth-child(2){color:#ffd700;white-space:nowrap}
+  .param-table td:nth-child(3){color:#888}
+  /* Code blocks */
+  .code-block{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:14px 16px;margin:10px 0;overflow-x:auto}
+  .code-block code{color:#ce9178;font-size:12px;line-height:1.8}
+  .code-block .comment{color:#6a9955}
+  .code-block .param{color:#9cdcfe}
+  .code-block .string{color:#ce9178}
+  .code-block .cmd{color:#dcdcaa}
+  /* Alert boxes */
+  .alert{border-left:4px solid;padding:12px 16px;margin:12px 0;border-radius:0 4px 4px 0;font-size:13px}
+  .alert-blue{border-color:#00bfff;background:#0d2030;color:#9acfdf}
+  .alert-yellow{border-color:#ffd700;background:#2a2600;color:#d4c060}
+  .alert-green{border-color:#4ec94e;background:#0d200d;color:#80c880}
+  /* Dependency grid */
+  .dep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:12px 0}
+  .dep-card{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:4px;padding:10px 14px}
+  .dep-card .name{color:#dcdcaa;font-family:Consolas,monospace;font-size:11px;margin-bottom:4px}
+  .dep-card .desc{color:#666;font-size:11px}
+  /* Flow diagram */
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:16px 0}
+  .flow-box{background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 14px;font-size:12px;text-align:center;min-width:110px}
+  .flow-box.blue{border-color:#00bfff55;color:#00bfff;background:#0d2030}
+  .flow-box.green{border-color:#4ec94e55;color:#4ec94e;background:#0d200d}
+  .flow-box.red{border-color:#ff6b6b55;color:#ff6b6b;background:#200d0d}
+  .flow-box.yellow{border-color:#ffd70055;color:#ffd700;background:#201e0d}
+  .flow-arrow{color:#444;font-size:18px;padding:0 6px}
+  /* File list */
+  .file-list{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0}
+  .file-list li{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:3px;padding:6px 12px;font-family:Consolas,monospace;font-size:11px;color:#ce9178}
+  .file-list li span{display:block;color:#555;font-family:Segoe UI,sans-serif;font-size:10px;margin-top:2px}
+  /* Header */
+  .page-header{background:linear-gradient(135deg,#0d1e2e 0%,#111 100%);border-bottom:1px solid #1e3a4a;padding:32px 48px 28px}
+  .version-tag{display:inline-block;background:#0d2030;border:1px solid #00bfff44;color:#00bfff;padding:2px 10px;border-radius:3px;font-size:11px;font-family:Consolas,monospace;margin-bottom:10px}
+  /* Section divider */
+  .divider{border:none;border-top:1px solid #222;margin:8px 0}
+  /* TOC numbers */
+  .toc-num{color:#333;font-size:11px;margin-right:4px;font-family:Consolas,monospace}
+  /* Inline code */
+  code.inline{background:#1e1e1e;border:1px solid #2e2e2e;color:#ce9178;padding:1px 5px;border-radius:3px;font-size:12px}
+  /* Warning note */
+  .note{background:#1e1e1e;border:1px solid #2e2e2e;border-radius:4px;padding:10px 14px;font-size:12px;color:#888;margin:10px 0}
+  .note strong{color:#ffd700}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-title">ACS TPE v14</div>
+  <a href="#overview"><span class="toc-num">01</span> Overview</a>
+  <a href="#prerequisites"><span class="toc-num">02</span> Prerequisites</a>
+  <a href="#workflow"><span class="toc-num">03</span> Workflow</a>
+  <a href="#config"><span class="toc-num">04</span> Config Generation</a>
+  <div class="sec">Main Scripts</div>
+  <a href="#migration"><span class="toc-num">05</span> Full Migration</a>
+  <a href="#undo"><span class="toc-num">06</span> Undo / Rollback</a>
+  <a href="#flip-teams"><span class="toc-num">07</span> Flip to Teams</a>
+  <a href="#flip-acs"><span class="toc-num">08</span> Flip to ACS</a>
+  <div class="sec">Supporting Scripts</div>
+  <a href="#toggle"><span class="toc-num">09</span> Toggle Routing</a>
+  <a href="#migrate-phone"><span class="toc-num">10</span> Migrate Phone (D365)</a>
+  <a href="#utilities"><span class="toc-num">11</span> Utility Scripts</a>
+  <div class="sec">Reference</div>
+  <a href="#artifacts"><span class="toc-num">12</span> File Artifacts</a>
+  <a href="#quickref"><span class="toc-num">13</span> Quick Reference</a>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="version-tag">v14.11.0</div>
+  <h1>ACS TPE Migration — Script Reference</h1>
+  <div class="sub">Customer Documentation &nbsp;·&nbsp; ACS Direct Routing → Teams Phone System &nbsp;·&nbsp; Generated 2026-05-05</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<!-- 01 OVERVIEW -->
+<h2 id="overview">01 &nbsp; Overview</h2>
+<p>The ACS TPE (Teams Phone Enablement) migration toolkit moves phone numbers from <strong>ACS Direct Routing</strong> to <strong>Teams Phone System (Direct Routing)</strong> with zero downtime. It also supports full rollback at any stage.</p>
+
+<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+  <div class="card" style="margin:0">
+    <div style="color:#00bfff;font-size:22px;font-weight:700;margin-bottom:4px">11</div>
+    <div style="color:#555;font-size:11px;text-transform:uppercase;letter-spacing:1px">Migration Steps</div>
+  </div>
+  <div class="card" style="margin:0">
+    <div style="color:#4ec94e;font-size:22px;font-weight:700;margin-bottom:4px">18</div>
+    <div style="color:#555;font-size:11px;text-transform:uppercase;letter-spacing:1px">PowerShell Scripts</div>
+  </div>
+  <div class="card" style="margin:0">
+    <div style="color:#ffd700;font-size:22px;font-weight:700;margin-bottom:4px">3</div>
+    <div style="color:#555;font-size:11px;text-transform:uppercase;letter-spacing:1px">Systems Touched</div>
+  </div>
+</div>
+
+<h3>Systems Involved</h3>
+<div class="dep-grid">
+  <div class="dep-card"><div class="name">Microsoft Teams</div><div class="desc">DR gateway, voice routes, resource accounts, phone assignments</div></div>
+  <div class="dep-card"><div class="name">Dynamics 365 (D365)</div><div class="desc">Phone number type, resource account link, CCaaS sync</div></div>
+  <div class="dep-card"><div class="name">ACS (Azure Communication Services)</div><div class="desc">SIP trunk enable/disable, route patching</div></div>
+  <div class="dep-card"><div class="name">Microsoft Entra ID</div><div class="desc">Domain registration for RA UPN suffix</div></div>
+</div>
+
+<!-- 02 PREREQUISITES -->
+<h2 id="prerequisites">02 &nbsp; Prerequisites</h2>
+<div class="card">
+  <h4>Required Tools</h4>
+  <ul style="padding-left:20px;color:#888;font-size:13px;line-height:2">
+    <li>PowerShell 5.1 or later (<code class="inline">$PSVersionTable.PSVersion</code>)</li>
+    <li>Azure CLI — <code class="inline">az login</code> with subscription access</li>
+    <li>MicrosoftTeams PS module — <code class="inline">Install-Module MicrosoftTeams</code></li>
+    <li>Microsoft.Graph PS module — <code class="inline">Install-Module Microsoft.Graph</code></li>
+  </ul>
+  <h4 style="margin-top:16px">Required Permissions</h4>
+  <ul style="padding-left:20px;color:#888;font-size:13px;line-height:2">
+    <li>Teams Admin (Global Admin or Teams Service Admin)</li>
+    <li>D365 System Administrator or customizer role</li>
+    <li>Azure Contributor on the ACS resource</li>
+    <li>Entra ID Domain Administrator (for Step 4 domain registration)</li>
+  </ul>
+</div>
+<div class="alert alert-yellow">
+  <strong>Teams Authentication:</strong> The MicrosoftTeams module does <em>not</em> cache tokens across PowerShell processes. Each new PS session requires <code class="inline">Connect-MicrosoftTeams -UseDeviceAuthentication</code> — authenticate at <strong>https://login.microsoft.com/device</strong> before running any script.
+</div>
+
+<!-- 03 WORKFLOW -->
+<h2 id="workflow">03 &nbsp; Workflow Overview</h2>
+<h3>Full Migration Path (first-time setup)</h3>
+<div class="flow">
+  <div class="flow-box blue">New-AcsTpeConfig<br><small>Generate config</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box blue">Invoke-ACS-TPE<br>Full-Migration<br><small>Steps 1–11</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box green">Teams Active<br><small>cutover complete</small></div>
+</div>
+
+<h3 style="margin-top:20px">Day-2 Operations (after initial migration)</h3>
+<div class="flow">
+  <div class="flow-box green">Teams Active</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box red">Invoke-FlipToACS<br><small>rollback</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box yellow">ACS Active<br><small>rolled back</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box blue">Invoke-FlipToTeams<br><small>re-flip</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box green">Teams Active</div>
+</div>
+
+<h3 style="margin-top:20px">Full Teardown (back to clean state)</h3>
+<div class="flow">
+  <div class="flow-box green">Teams Active</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box red">Invoke-FlipToACS<br><small>step A–C</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box red">Undo-ACS-TPE<br><small>steps 9→1</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box yellow">Clean State<br><small>step 1 ready</small></div>
+</div>
+
+<!-- 04 CONFIG -->
+<h2 id="config">04 &nbsp; Config Generation</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">New-AcsTpeConfig-v14.ps1</div>
+    <span class="badge badge-blue">Setup</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Auto-generates the config JSON by querying Azure, D365, and ACS. Only the <code class="inline">-Domain</code> parameter is required — all other values are discovered automatically.</p>
+
+  <h4>Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-Domain</td><td><span class="badge badge-yellow">Required</span></td><td>Custom domain for Resource Account UPNs, e.g. <code class="inline">cbg-voice.contoso.com</code></td></tr>
+    <tr><td>-OutputPath</td><td><span class="badge badge-gray">Optional</span></td><td>Path to write config JSON. Default: <code class="inline">.\new-acs-tpe-config-v14.11.0.json</code></td></tr>
+    <tr><td>-SubscriptionId</td><td><span class="badge badge-gray">Optional</span></td><td>Override Azure subscription. Default: current az CLI subscription</td></tr>
+    <tr><td>-D365OrgUrl</td><td><span class="badge badge-gray">Optional</span></td><td>Override D365 org URL. Default: discovered via Global Discovery Service</td></tr>
+    <tr><td>-PolicyName</td><td><span class="badge badge-gray">Optional</span></td><td>Teams Voice Routing Policy name. Default: <code class="inline">acs-tpe-migration</code></td></tr>
+    <tr><td>-UsageName</td><td><span class="badge badge-gray">Optional</span></td><td>Teams PSTN Usage name. Default: <code class="inline">acs-tpe-pstn-usage</code></td></tr>
+    <tr><td>-RouteName</td><td><span class="badge badge-gray">Optional</span></td><td>Teams Voice Route name. Default: <code class="inline">acs-tpe-voice-route</code></td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Discover and display all values without writing the config file</td></tr>
+  </table>
+
+  <h4>Examples</h4>
+  <div class="code-block"><code><span class="comment"># Auto-discover everything (only domain needed)</span>
+.\New-AcsTpeConfig-v14.ps1 -Domain "cbg-voice.contoso.com"
+
+<span class="comment"># Dry run — show discovered values without writing file</span>
+.\New-AcsTpeConfig-v14.ps1 -Domain "cbg-voice.contoso.com" -DryRun
+
+<span class="comment"># Override D365 org URL (useful when Global Discovery doesn't list your org)</span>
+.\New-AcsTpeConfig-v14.ps1 -Domain "cbg-voice.contoso.com" -D365OrgUrl "https://myorg.crm10.dynamics.com"</code></div>
+
+  <div class="note"><strong>Output:</strong> Writes <code class="inline">new-acs-tpe-config-v14.11.0.json</code> (gitignored — contains credentials). Keep this file in the working directory; all other scripts reference it via <code class="inline">-ConfigPath</code>.</div>
+</div>
+
+<!-- 05 FULL MIGRATION -->
+<h2 id="migration">05 &nbsp; Full Migration</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Invoke-ACS-TPE-Full-Migration-v14.ps1</div>
+    <span class="badge badge-blue">Migration</span>
+    <span class="badge badge-yellow">11 Steps</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">End-to-end migration from ACS Direct Routing to Teams Phone System. Runs steps 1–11 sequentially. Supports resume from any step via <code class="inline">-StartAtStep</code>.</p>
+
+  <h4>Migration Steps</h4>
+  <ul class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-name">Export ACS Trunks</div>
+        <div class="step-desc">Reads current ACS SIP trunks and routes, writes <code class="inline">acs-export.json</code>. Used by Toggle and Undo scripts for state restoration.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-name">Register Teams Gateway (Zero-Downtime)</div>
+        <div class="step-desc">Registers the SBC FQDN as a Teams DR gateway via <code class="inline">New-CsOnlinePSTNGateway</code>. ACS trunk is temporarily disabled, then immediately re-enabled after gateway registration.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-name">Create PSTN Usage, Voice Route &amp; Routing Policy</div>
+        <div class="step-desc">Creates <code class="inline">acs-tpe-pstn-usage</code>, <code class="inline">acs-tpe-voice-route</code> (pattern from D365 phone numbers), and <code class="inline">acs-tpe-migration</code> voice routing policy.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-name">Register Domain in Entra ID</div>
+        <div class="step-desc">Registers the custom domain (e.g. <code class="inline">cbg-voice.contoso.com</code>) in Entra ID so Resource Account UPNs can use that suffix. Skipped if domain is already the default.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-name">Validate SBC Gateway, Routes &amp; Policies</div>
+        <div class="step-desc">Read-only verification that gateway, route, PSTN usage, and routing policy were created correctly. No changes made.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-name">Upload DR Phone Numbers to Teams</div>
+        <div class="step-desc">Calls <code class="inline">New-CsOnlineDirectRoutingTelephoneNumberUploadOrder</code> for each number discovered from D365. Polls up to 2 minutes for Activated/Unassigned status. Skips gracefully if number already exists.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-name">Create Resource Accounts (RAs)</div>
+        <div class="step-desc">Creates one Teams Resource Account per phone number (UPN: <code class="inline">acs-tpe-ra-&lt;number&gt;@&lt;domain&gt;</code>). Object IDs saved to <code class="inline">ra-objectids.json</code>. Retries up to 5× for replication lag.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="step-name">Assign PHONESYSTEM_VIRTUALUSER Licenses</div>
+        <div class="step-desc">Assigns Teams Phone Resource Account license to each RA. Polls until license provisioning is confirmed before proceeding.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">9</div>
+      <div class="step-body">
+        <div class="step-name">Assign DR Phone Numbers to RAs + D365 Backup</div>
+        <div class="step-desc">Assigns each phone number to its RA via <code class="inline">Set-CsPhoneNumberAssignment</code>. Backs up D365 phone number state to <code class="inline">d365-phone-backup.json</code>. Triggers D365 CCaaS sync.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num green">10</div>
+      <div class="step-body">
+        <div class="step-name">Cut Over to Teams</div>
+        <div class="step-desc">Calls <code class="inline">Toggle-AcsTeamsRouting-v14.ps1</code> to flip routing: ACS trunk → disabled, Teams gateway → enabled. This is the live cutover moment.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num green">11</div>
+      <div class="step-body">
+        <div class="step-name">Update D365 Phone Number Types + Sync</div>
+        <div class="step-desc">Calls <code class="inline">Invoke-MigrateTpsPhoneNumber-v14.ps1</code> per number to set D365 type → TPS, link Teams RA, and trigger CCaaS_SynchronizePhoneNumbers.</div>
+      </div>
+    </li>
+  </ul>
+
+  <h4 style="margin-top:20px">Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-ConfigPath</td><td><span class="badge badge-yellow">Required</span></td><td>Path to the generated config JSON</td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Show all planned actions without making any changes</td></tr>
+    <tr><td>-StartAtStep</td><td><span class="badge badge-gray">Optional</span></td><td>Resume from a specific step (1–11). Default: 1</td></tr>
+    <tr><td>-StopAfterStep</td><td><span class="badge badge-gray">Optional</span></td><td>Stop after this step. Default: 11</td></tr>
+    <tr><td>-AutoConfirm</td><td><span class="badge badge-gray">Optional</span></td><td>Skip interactive confirmation prompts</td></tr>
+  </table>
+
+  <h4>Examples</h4>
+  <div class="code-block"><code><span class="comment"># Always dry-run first</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+
+<span class="comment"># Full migration steps 1–11</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json
+
+<span class="comment"># Resume from step 7 (e.g. after fixing an RA creation failure)</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -StartAtStep 7
+
+<span class="comment"># Run only steps 7–9 (RA creation through number assignment)</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -StartAtStep 7 -StopAfterStep 9</code></div>
+</div>
+
+<!-- 06 UNDO -->
+<h2 id="undo">06 &nbsp; Undo / Full Rollback</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Undo-ACS-TPE-Migration-v14.ps1</div>
+    <span class="badge badge-red">Rollback</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Reverses the full migration (steps 9→1) and restores the environment to a clean pre-migration state. Steps 10–11 are reversed by <code class="inline">Invoke-FlipToACS-v14.ps1</code> and must be run first.</p>
+
+  <div class="alert alert-yellow"><strong>Run order:</strong> Always run <code class="inline">Invoke-FlipToACS-v14.ps1</code> first (to reverse steps 10–11), then run this script to reverse steps 9→1.</div>
+
+  <h4>Undo Steps (reverse order)</h4>
+  <ul class="steps">
+    <li>
+      <div class="step-num red">9</div>
+      <div class="step-body">
+        <div class="step-name">Remove Phone Number Assignments</div>
+        <div class="step-desc">Unlinks phone numbers from RAs. Restores D365 phone number state from <code class="inline">d365-phone-backup.json</code>. Triggers D365 sync.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">8</div>
+      <div class="step-body">
+        <div class="step-name">Remove PHONESYSTEM_VIRTUALUSER Licenses</div>
+        <div class="step-desc">Removes Teams Phone Resource Account licenses from all RAs created during migration.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">7</div>
+      <div class="step-body">
+        <div class="step-name">Delete Resource Accounts</div>
+        <div class="step-desc">Deletes all Teams Resource Accounts created during migration (from <code class="inline">ra-objectids.json</code>). Backs up objectids file with timestamp.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">6</div>
+      <div class="step-body">
+        <div class="step-name">Remove DR Phone Numbers from Teams</div>
+        <div class="step-desc">Removes phone numbers from the Teams DR pool. Restores D365 phone records to ACS state.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">4</div>
+      <div class="step-body">
+        <div class="step-name">Remove Registered Domain from Entra ID</div>
+        <div class="step-desc">Removes the custom domain registered in Step 4. Skipped if domain is the default or still in use. Requires explicit <code class="inline">DELETE</code> confirmation.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">3</div>
+      <div class="step-body">
+        <div class="step-name">Remove Voice Routing Policy, Route &amp; PSTN Usage</div>
+        <div class="step-desc">Removes <code class="inline">acs-tpe-migration</code> policy, <code class="inline">acs-tpe-voice-route</code>, and <code class="inline">acs-tpe-pstn-usage</code>. Only removes objects created by the migration — pre-existing routes are untouched.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">2</div>
+      <div class="step-body">
+        <div class="step-name">Remove Teams DR Gateway, Re-enable ACS Trunk</div>
+        <div class="step-desc">Removes the Teams DR gateway registration for the SBC FQDN. Re-enables the ACS trunk (with original routes from <code class="inline">acs-export.json</code>). Only removes gateways added during migration — pre-existing gateways are skipped.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">1</div>
+      <div class="step-body">
+        <div class="step-name">Backup acs-export.json</div>
+        <div class="step-desc">Archives <code class="inline">acs-export.json</code> with timestamp (file kept for reference).</div>
+      </div>
+    </li>
+  </ul>
+
+  <h4 style="margin-top:20px">Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-ConfigPath</td><td><span class="badge badge-yellow">Required</span></td><td>Path to the config JSON</td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Show all planned removals without making any changes</td></tr>
+    <tr><td>-StartAtStep</td><td><span class="badge badge-gray">Optional</span></td><td>Start undo from this step downward (1–9). Default: 9</td></tr>
+    <tr><td>-StopAfterStep</td><td><span class="badge badge-gray">Optional</span></td><td>Stop undo at this step. Default: 1</td></tr>
+    <tr><td>-AutoConfirm</td><td><span class="badge badge-gray">Optional</span></td><td>Skip interactive confirmation prompts</td></tr>
+  </table>
+
+  <h4>Examples</h4>
+  <div class="code-block"><code><span class="comment"># Dry run first — review what will be removed</span>
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+
+<span class="comment"># Full undo steps 9 → 1</span>
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json
+
+<span class="comment"># Undo only steps 9–7 (remove assignment, license, RA — leave routes/gateway)</span>
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -StartAtStep 9 -StopAfterStep 7
+
+<span class="comment"># Undo only steps 3–2 (remove routes and gateway)</span>
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -StartAtStep 3 -StopAfterStep 2</code></div>
+</div>
+
+<!-- 07 FLIP TO TEAMS -->
+<h2 id="flip-teams">07 &nbsp; Flip to Teams</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Invoke-FlipToTeams-v14.ps1</div>
+    <span class="badge badge-green">Cutover</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Day-2 re-cutover from ACS back to Teams after a rollback. Requires that Steps 1–9 are already completed (gateway, routes, and RAs must exist).</p>
+
+  <h4>Steps</h4>
+  <ul class="steps">
+    <li>
+      <div class="step-num green">A</div>
+      <div class="step-body">
+        <div class="step-name">Assign Teams Phone Numbers</div>
+        <div class="step-desc">Calls <code class="inline">Set-CsPhoneNumberAssignment</code> for each number, linking it to its Teams Resource Account (Object IDs from <code class="inline">ra-objectids.json</code>).</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num green">B</div>
+      <div class="step-body">
+        <div class="step-name">Toggle Routing ACS → Teams</div>
+        <div class="step-desc">Calls <code class="inline">Toggle-AcsTeamsRouting-v14.ps1</code>. Disables ACS trunk, enables Teams gateway.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num green">C</div>
+      <div class="step-body">
+        <div class="step-name">Update D365 Phone Type ACS → TPS</div>
+        <div class="step-desc">Calls <code class="inline">Invoke-MigrateTpsPhoneNumber-v14.ps1</code> per number: sets D365 type to Teams, links RA, triggers CCaaS sync.</div>
+      </div>
+    </li>
+  </ul>
+
+  <h4 style="margin-top:20px">Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-ConfigPath</td><td><span class="badge badge-yellow">Required</span></td><td>Path to the config JSON</td></tr>
+    <tr><td>-PhoneNumbers</td><td><span class="badge badge-gray">Optional</span></td><td>Specific numbers to flip (e.g. <code class="inline">"+12069990060"</code>). Default: reads <code class="inline">ra-objectids.json</code></td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Show plan without making changes</td></tr>
+  </table>
+
+  <h4>Examples</h4>
+  <div class="code-block"><code><span class="comment"># Dry run</span>
+.\Invoke-FlipToTeams-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+
+<span class="comment"># Flip all numbers from this migration run</span>
+.\Invoke-FlipToTeams-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json
+
+<span class="comment"># Flip a specific number only</span>
+.\Invoke-FlipToTeams-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -PhoneNumbers "+12069990060"</code></div>
+</div>
+
+<!-- 08 FLIP TO ACS -->
+<h2 id="flip-acs">08 &nbsp; Flip to ACS (Rollback)</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Invoke-FlipToACS-v14.ps1</div>
+    <span class="badge badge-red">Rollback</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Rolls back routing from Teams to ACS. Can be run at any time after Steps 10–11 have completed. Phone numbers are discovered automatically from D365 (all numbers with type=Teams).</p>
+
+  <h4>Steps</h4>
+  <ul class="steps">
+    <li>
+      <div class="step-num red">A</div>
+      <div class="step-body">
+        <div class="step-name">Toggle Routing Teams → ACS</div>
+        <div class="step-desc">Calls <code class="inline">Toggle-AcsTeamsRouting-v14.ps1</code>. Disables Teams gateway, re-enables ACS trunk with original routes.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">B</div>
+      <div class="step-body">
+        <div class="step-name">Remove Teams Phone Number Assignments</div>
+        <div class="step-desc">Calls <code class="inline">Remove-CsPhoneNumberAssignment</code> per number. Required to prevent D365 CCaaS background sync from re-linking the Teams RA.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num red">C</div>
+      <div class="step-body">
+        <div class="step-name">Update D365 Phone Type TPS → ACS</div>
+        <div class="step-desc">Calls <code class="inline">Invoke-MigrateTpsPhoneNumber-v14.ps1</code> per number: sets D365 type to ACS, clears Teams RA link, triggers sync.</div>
+      </div>
+    </li>
+  </ul>
+
+  <h4 style="margin-top:20px">Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-ConfigPath</td><td><span class="badge badge-yellow">Required</span></td><td>Path to the config JSON</td></tr>
+    <tr><td>-PhoneNumbers</td><td><span class="badge badge-gray">Optional</span></td><td>Specific numbers to flip. Default: queries D365 for all numbers with type=Teams</td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Show plan without making changes</td></tr>
+  </table>
+
+  <h4>Examples</h4>
+  <div class="code-block"><code><span class="comment"># Dry run</span>
+.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+
+<span class="comment"># Roll back all Teams numbers to ACS</span>
+.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json
+
+<span class="comment"># Roll back specific numbers</span>
+.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -PhoneNumbers "+12069990060","+12069990070"</code></div>
+</div>
+
+<!-- 09 TOGGLE -->
+<h2 id="toggle">09 &nbsp; Toggle Routing</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Toggle-AcsTeamsRouting-v14.ps1</div>
+    <span class="badge badge-gray">Supporting</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Low-level routing toggle. Auto-detects current routing direction (ACS or Teams) and switches to the other side. Called by the flip scripts and Step 10 of migration. Can also be run standalone.</p>
+  <div class="alert alert-blue"><strong>Auto-detect:</strong> ACS enabled + Teams disabled → flips to Teams. Teams enabled + ACS disabled → flips to ACS. If both or neither are active, the script errors out.</div>
+
+  <h4>Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-ConfigPath</td><td><span class="badge badge-yellow">Required</span></td><td>Path to the config JSON (needs <code class="inline">AcsConnectionString</code>, <code class="inline">SbcFqdn</code>)</td></tr>
+    <tr><td>-AutoConfirm</td><td><span class="badge badge-gray">Optional</span></td><td>Skip Y/N prompt (used when called from other scripts)</td></tr>
+  </table>
+
+  <div class="code-block"><code>.\Toggle-AcsTeamsRouting-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json</code></div>
+</div>
+
+<!-- 10 MIGRATE PHONE -->
+<h2 id="migrate-phone">10 &nbsp; Migrate Phone Number (D365)</h2>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Invoke-MigrateTpsPhoneNumber-v14.ps1</div>
+    <span class="badge badge-gray">Supporting</span>
+  </div>
+  <p style="color:#888;font-size:13px;margin-bottom:14px">Updates a single phone number's type and RA link in D365. Called by the flip scripts and Step 11 of migration. Can be run standalone for individual number fixes.</p>
+
+  <h4>Parameters</h4>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+    <tr><td>-OrgUrl</td><td><span class="badge badge-yellow">Required</span></td><td>D365 org URL, e.g. <code class="inline">https://contoso.crm.dynamics.com</code></td></tr>
+    <tr><td>-PhoneNumber</td><td><span class="badge badge-yellow">Required</span></td><td>E.164 format, e.g. <code class="inline">+14255550100</code></td></tr>
+    <tr><td>-Direction</td><td><span class="badge badge-yellow">Required</span></td><td><code class="inline">ACS_TO_TPS</code> or <code class="inline">TPS_TO_ACS</code></td></tr>
+    <tr><td>-TeamsResourceAccountObjectId</td><td><span class="badge badge-gray">Optional</span></td><td>RA ObjectId GUID for ACS_TO_TPS (from <code class="inline">ra-objectids.json</code>)</td></tr>
+    <tr><td>-DryRun</td><td><span class="badge badge-gray">Optional</span></td><td>Show current record state without patching</td></tr>
+  </table>
+
+  <div class="code-block"><code><span class="comment"># Migrate ACS → Teams with explicit RA link</span>
+.\Invoke-MigrateTpsPhoneNumber-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com" -PhoneNumber "+14255550100" -Direction ACS_TO_TPS -TeamsResourceAccountObjectId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+<span class="comment"># Roll back Teams → ACS</span>
+.\Invoke-MigrateTpsPhoneNumber-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com" -PhoneNumber "+14255550100" -Direction TPS_TO_ACS</code></div>
+</div>
+
+<!-- 11 UTILITIES -->
+<h2 id="utilities">11 &nbsp; Utility Scripts</h2>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Update-PhoneNumberType-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Lower-level D365 phone number record patcher. Directly sets <code class="inline">msdyn_phonenumbertype</code>, <code class="inline">msdyn_ocphonenumbersource</code>, and <code class="inline">msdyn_teamsresourceaccount</code>. Use <code class="inline">Invoke-MigrateTpsPhoneNumber-v14.ps1</code> instead for most cases (it auto-discovers the provider setting).</p>
+  <div class="code-block"><code>.\Update-PhoneNumberType-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com" -PhoneNumber "+14255550100" -Direction ACS_TO_TPS -TeamsResourceAccount "guid"
+.\Update-PhoneNumberType-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com" -PhoneNumber "+14255550100" -Direction TPS_TO_ACS</code></div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Repair-D365PhoneRecord-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Diagnoses and repairs D365 phone number records that disappear from the CSAC UI after an undo. Checks for orphaned RA links, wrong phone number source, or inactive state (<code class="inline">statecode=1</code>). Use <code class="inline">-Fix</code> to apply repairs.</p>
+  <div class="code-block"><code><span class="comment"># Diagnose only (no changes)</span>
+.\Repair-D365PhoneRecord-v14.ps1 -ConfigPath .\config.json -PhoneNumbers +12069990030
+
+<span class="comment"># Diagnose and fix</span>
+.\Repair-D365PhoneRecord-v14.ps1 -ConfigPath .\config.json -PhoneNumbers +12069990030 -Fix
+
+<span class="comment"># Fix all numbers</span>
+.\Repair-D365PhoneRecord-v14.ps1 -ConfigPath .\config.json -Fix</code></div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Sync-TeamsPhoneNumbers-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Triggers <code class="inline">CCaaS_SynchronizePhoneNumbers</code> in D365 — the equivalent of clicking the "Sync from Azure" button in the CSAC UI. Run after any phone number type change if D365 doesn't reflect the new state.</p>
+  <div class="code-block"><code>.\Sync-TeamsPhoneNumbers-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com"</code></div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Get-TeamsProviderSetting-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Queries D365 for the active Teams communication provider setting and returns the <code class="inline">CommsProviderId</code> GUID. Useful for debugging D365 sync issues.</p>
+  <div class="code-block"><code>.\Get-TeamsProviderSetting-v14.ps1 -OrgUrl "https://contoso.crm.dynamics.com"</code></div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Fix-AcsRoutePattern-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Updates the ACS route pattern regex on the SBC FQDN. Run if the auto-generated regex does not match your phone numbers after migration.</p>
+  <div class="code-block"><code>.\Fix-AcsRoutePattern-v14.ps1 -ConfigPath .\config.json -DryRun
+.\Fix-AcsRoutePattern-v14.ps1 -ConfigPath .\config.json</code></div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Set-AcsSbcFqdn-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Updates the SBC FQDN in the ACS trunk configuration. Run if the FQDN needs to be changed after initial setup.</p>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Add-AcsTrunkDisabled-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Manually records an ACS trunk FQDN in <code class="inline">acs-trunk-disabled.json</code>. Used when the migration Step 2 did not automatically capture the disabled trunk (e.g. after a partial run).</p>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Test-DomainRegistration-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Verifies that the custom domain is registered and verified in Entra ID. Run before Step 4 or to diagnose RA creation failures caused by an unverified domain.</p>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px">Archive-TpeRuns-v14.ps1</h3>
+  <p style="color:#888;font-size:13px;margin-bottom:12px">Cleans up the working directory by moving old HTML run logs and backup JSON files into <code class="inline">Backup-Run\</code> and <code class="inline">Backup-Config-json\</code>. Always keeps the latest config, <code class="inline">tpe-status.html</code>, and files needed by rollback scripts.</p>
+  <div class="code-block"><code>.\Archive-TpeRuns-v14.ps1 -DryRun
+.\Archive-TpeRuns-v14.ps1</code></div>
+</div>
+
+<!-- 12 ARTIFACTS -->
+<h2 id="artifacts">12 &nbsp; File Artifacts</h2>
+<p style="color:#888;font-size:13px;margin-bottom:12px">Files written to the working directory during migration. <strong>Do not delete</strong> the files marked as needed by rollback.</p>
+<table class="param-table">
+  <tr><th>File</th><th>Created By</th><th>Used By</th></tr>
+  <tr><td>new-acs-tpe-config-*.json</td><td>New-AcsTpeConfig</td><td>All scripts — <span style="color:#ff6b6b">contains credentials, gitignored</span></td></tr>
+  <tr><td>acs-export.json</td><td>Migration Step 1</td><td>Toggle, Undo Step 2</td></tr>
+  <tr><td>acs-trunk-disabled.json</td><td>Migration Step 2</td><td>Toggle (ACS restore), Undo Step 2</td></tr>
+  <tr><td>ra-objectids.json</td><td>Migration Step 7</td><td>FlipToTeams (Step A), FlipToACS (Step B), Undo Steps 7–9</td></tr>
+  <tr><td>d365-phone-backup.json</td><td>Migration Step 9</td><td>Undo Step 9 (D365 restore)</td></tr>
+  <tr><td>tpe-migration-results.csv</td><td>Migration (each run)</td><td>Audit / reference</td></tr>
+  <tr><td>tpe-status.html</td><td>All scripts</td><td>Live dashboard — auto-refreshes every 60s</td></tr>
+  <tr><td>tpe-migration-run-*.html</td><td>Migration / FlipToTeams</td><td>Run log — archived by Archive-TpeRuns</td></tr>
+  <tr><td>tpe-undo-run-*.html</td><td>Undo / FlipToACS</td><td>Run log — archived by Archive-TpeRuns</td></tr>
+</table>
+
+<!-- 13 QUICK REFERENCE -->
+<h2 id="quickref">13 &nbsp; Quick Reference</h2>
+<div class="card">
+  <h4>First-Time Migration (clean environment)</h4>
+  <div class="code-block"><code><span class="comment"># 1. Generate config</span>
+.\New-AcsTpeConfig-v14.ps1 -Domain "cbg-voice.contoso.com"
+
+<span class="comment"># 2. Dry run</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+
+<span class="comment"># 3. Run migration</span>
+.\Invoke-ACS-TPE-Full-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json</code></div>
+
+  <h4 style="margin-top:16px">Roll Back to ACS</h4>
+  <div class="code-block"><code>.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json</code></div>
+
+  <h4 style="margin-top:16px">Re-Cut to Teams</h4>
+  <div class="code-block"><code>.\Invoke-FlipToTeams-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+.\Invoke-FlipToTeams-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json</code></div>
+
+  <h4 style="margin-top:16px">Full Teardown (reset to step-1 clean state)</h4>
+  <div class="code-block"><code><span class="comment"># Step 1: Roll back routing + D365</span>
+.\Invoke-FlipToACS-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json
+
+<span class="comment"># Step 2: Remove all Teams objects created during migration</span>
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -DryRun
+.\Undo-ACS-TPE-Migration-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json</code></div>
+
+  <h4 style="margin-top:16px">Fix D365 After Rollback (numbers missing from CSAC)</h4>
+  <div class="code-block"><code>.\Repair-D365PhoneRecord-v14.ps1 -ConfigPath .\new-acs-tpe-config-v14.11.0.json -Fix</code></div>
+</div>
+
+<div style="margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#333;font-size:11px;text-align:center">
+  ACS TPE v14.11.0 &nbsp;·&nbsp; Generated 2026-05-05 &nbsp;·&nbsp; For internal use
+</div>
+
+</div><!-- /content -->
+</body>
+</html>
