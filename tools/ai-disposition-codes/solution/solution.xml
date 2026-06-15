@@ -83,6 +83,45 @@
       <RootComponent type="300" schemaName="ccaasfde_dispositionrecommendation_d051d" behavior="0" />
       <RootComponent type="401" id="{98737408-057e-42a8-bbcd-12134a4c64e0}" behavior="0" />
     </RootComponents>
-    <MissingDependencies />
+    <MissingDependencies>
+      <MissingDependency>
+        <Required type="1" schemaName="msdyn_conversationdispositioncodemap" displayName="Conversation disposition code map" solution="msdyn_ChannelExperienceApp (1.0.25124.1014)">
+          <package appName="ChannelExperienceApps" version="1.0.25042.1013">msdyn_ChannelExperienceAppsAnchor (1.0.25042.1013)</package>
+          <package appName="Dynamics 365 ChannelExperienceApps" version="1.0.25044.1019">msdyn_ChannelExperienceAppsAnchor (1.0.25044.1019)</package>
+        </Required>
+        <Dependent type="300" schemaName="ccaasfde_dispositionrecommendation_d051d" displayName="Disposition Recommendation" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="msdyn_conversationinsight" displayName="ConversationInsight" solution="msdyn_ConversationInsight (9.0.25124.1002)">
+          <package appName="UnifiedRoutingPrime" version="1.5.27.155">UnifiedRoutingPrimeAnchor (1.5.27.155)</package>
+          <package appName="CustomerServiceAnalytics" version="9.0.24124.1001">msdyn_CustomerServiceAnalyticsAnchor (9.0.24124.1001)</package>
+          <package appName="Dynamics 365 Customer Service Analytics" version="9.0.25044.1002">msdyn_CustomerServiceAnalyticsAnchor (9.0.25044.1002)</package>
+        </Required>
+        <Dependent type="29" displayName="Disposition Recommender" id="{ea73f750-74dd-f011-8543-000d3a3007f4}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="msdyn_ocdispositioncode" displayName="OC Disposition Code" solution="msdyn_ChannelExperienceApp (1.0.25124.1014)">
+          <package appName="ChannelExperienceApps" version="1.0.25042.1013">msdyn_ChannelExperienceAppsAnchor (1.0.25042.1013)</package>
+          <package appName="Dynamics 365 ChannelExperienceApps" version="1.0.25044.1019">msdyn_ChannelExperienceAppsAnchor (1.0.25044.1019)</package>
+        </Required>
+        <Dependent type="300" schemaName="ccaasfde_dispositionrecommendation_d051d" displayName="Disposition Recommendation" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="msdyn_ocliveworkitem" displayName="Conversation" solution="OmnichannelBase (1.10.0.124)">
+          <package appName="UnifiedRoutingPrime" version="1.5.27.155">UnifiedRoutingPrimeAnchor (1.5.27.155)</package>
+        </Required>
+        <Dependent type="1" schemaName="msdyn_ocliveworkitem" displayName="Conversation" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="msdyn_ocliveworkitemicon" displayName="msdyn_ocliveworkitemicon" solution="OmnichannelBase (1.10.0.124)">
+          <package appName="UnifiedRoutingPrime" version="1.5.27.155">UnifiedRoutingPrimeAnchor (1.5.27.155)</package>
+        </Required>
+        <Dependent type="1" schemaName="msdyn_ocliveworkitem" displayName="Conversation" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="66" schemaName="cat_PowerCAT.Picker" displayName="cat_PowerCAT.Picker" solution="CreatorKitCore (1.0.20240529.1)" />
+        <Dependent type="300" schemaName="ccaasfde_dispositionrecommendation_d051d" displayName="Disposition Recommendation" />
+      </MissingDependency>
+    </MissingDependencies>
   </SolutionManifest>
 </ImportExportXml>
