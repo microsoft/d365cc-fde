@@ -210,55 +210,7 @@
     </WebResource>
   </WebResources>
   <CustomControls />
-  <AppModules>
-    <AppModule>
-      <UniqueName>msdyn_CustomerServiceWorkspace</UniqueName>
-      <IntroducedVersion>1.0</IntroducedVersion>
-      <WebResourceId>21aa1d8b-2c55-e711-80f0-000d3aa2b1c4</WebResourceId>
-      <OptimizedFor></OptimizedFor>
-      <statecode>0</statecode>
-      <statuscode>1</statuscode>
-      <FormFactor>1</FormFactor>
-      <ClientType>4</ClientType>
-      <NavigationType>1</NavigationType>
-      <AppModuleComponents>
-      </AppModuleComponents>
-      <AppModuleRoleMaps>
-        <Role id="{fe46802a-88ae-4c6d-b452-7a024d8c294e}" solutionaction="Added" />
-        <Role id="{f81b26a8-1e9d-4c30-acea-60675c06411e}" solutionaction="Added" />
-      </AppModuleRoleMaps>
-      <EventHandlers>
-        <EventHandler eventname="onload" functionname="AppRuntime.Bootstrapper.CECBootstrapper.Instance.init" libraryname="msdyn_CECAppRuntime.js" parameters="" enable="true" isblocking="false" />
-        <EventHandler eventname="onload" functionname="DeepLinkLoader.DeepLinkLoader.Main" libraryname="msdyn_DeepLinkLoader.js" parameters="" enable="true" isblocking="true" />
-        <EventHandler eventname="onload" functionname="ModernCaseManagement.ModernCaseManagementLibrary.InitSessionManager" libraryname="ModernCaseManagement/Incident/msdyn_ModernCaseManagement.js" parameters="" enable="true" isblocking="false" />
-      </EventHandlers>
-      <LocalizedNames>
-        <LocalizedName description="Customer Service workspace" languagecode="1033" />
-      </LocalizedNames>
-      <Descriptions>
-        <Description description="Multi-session Customer Service with Productivity tools" languagecode="1033" />
-      </Descriptions>
-      <appelements>
-        <appelement uniquename="ccaasfde_msdyn_CustomerServiceWorkspace_canvasappid_ccaasfde_dispositionrecommendation_d051d">
-          <canvasappid>
-            <name>ccaasfde_dispositionrecommendation_d051d</name>
-          </canvasappid>
-          <iscustomizable>1</iscustomizable>
-          <name>ccaasfde_msdyn_CustomerServiceWorkspace_canvasappid_ccaasfde_dispositionrecommendation_d051d</name>
-        </appelement>
-      </appelements>
-      <appsettings>
-        <appsetting settingdefinitionid.uniquename="msdyn_enablertecopilot">
-          <iscustomizable>1</iscustomizable>
-          <value>true</value>
-        </appsetting>
-        <appsetting settingdefinitionid.uniquename="msdyn_rtecopilotdefaultonruncompleted">
-          <iscustomizable>1</iscustomizable>
-          <value>true</value>
-        </appsetting>
-      </appsettings>
-    </AppModule>
-  </AppModules>
+  <AppModules />
   <EntityDataProviders />
   <CanvasApps>
     <CanvasApp>
