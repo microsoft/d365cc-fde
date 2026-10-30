@@ -1,9 +1,9 @@
 // ==========================================================
-// Disposition Code Copilot - Form Handler v2.1
+// Disposition Code Copilot - Form Handler v2.2
 // OPTIMIZED FOR HIGH-VOLUME CONTACT CENTERS
 // ==========================================================
 // Web resources:
-//  - JS:   ccaasfde_dispositioncodecopilotformhandler
+//  - JS:   ccaasfde_dispositioncodeformhandler
 //  - Custom Page: ccaasfde_dispositionrecommendation_d051d
 //
 // Trigger:
@@ -12,67 +12,91 @@
 //  - On form load: parallel fetch workstream + dispositions (non-blocking)
 //  - On end: open modal with pre-cached data (instant)
 //
-// v2.1 CHANGE LOG:
-//  - FIX: Added sessionStorage guard to prevent duplicate modal when
-//    agent closes conversation form/tab (EndConversationEvent fires
-//    on both conversation end AND session close, and in-memory guards
-//    are lost on form reload). sessionStorage persists across form
-//    reloads within the same browser session.
-//  - All other logic is UNCHANGED from v2.0.
+// v2.2 CHANGE LOG:
+//  - FIX: A failed modal open no longer leaves the conversation marked as
+//    handled; the in-memory, global and sessionStorage guards are released
+//    so the next end event can retry.
+//  - FIX: Form refresh after the modal closes uses formContext.data.refresh();
+//    DOM scraping for the Refresh button is only a fallback.
+//  - NEW: CONFIG.ENABLED kill switch and CONFIG.ENABLED_WORKSTREAM_IDS
+//    allowlist. The modal is skipped when the workstream has no disposition
+//    codes.
+//  - NEW: Warnings when the 500-code fetch limit or the payload size limit
+//    is reached.
+//  - FIX: Evaluating the script again (form reload) retires the previous copy
+//    (unregisters its CIF callback and timer) so one end event cannot open
+//    two modals.
+//  - Everything is now scoped inside an IIFE. Only `onLoad` (the form event
+//    handler, kept for backward compatibility with existing form
+//    registrations) and `__ccaasfdeCopilot` (debug) are exposed on window.
+//  - Removed unused code (saveDisposition, getDispositionCategories,
+//    MessageHandler, withTimeout, formatGuidForOData). The Custom Page
+//    performs all saves.
+//
+// v2.1: Added sessionStorage guard to prevent a duplicate modal when the
+//    agent closes the conversation form/tab (EndConversationEvent fires on
+//    both conversation end AND session close).
 // ==========================================================
 
+(function (global) {
 "use strict";
 
 // ===== CONFIGURATION =====
 const CONFIG = Object.freeze({
+  // Kill switch. Set to false and publish to disable the modal without
+  // removing the form registration.
+  ENABLED: true,
+
+  // Optional allowlist of workstream IDs (lowercase GUIDs, no braces).
+  // Empty = all workstreams.
+  ENABLED_WORKSTREAM_IDS: [],
+
   // Entities
   DISPOSITION_ENTITY: "msdyn_ocdispositioncode",
-  DISPOSITION_ID_FIELD: "msdyn_ocdispositioncodeid",
-  DISPOSITION_NAME_FIELD: "msdyn_dispositioncodevalue",
-  DISPOSITION_CODE_FIELD: "msdyn_name",
-  
   LIVEWORKITEM_ENTITY: "msdyn_ocliveworkitem",
   WORKSTREAM_LOOKUP: "_msdyn_liveworkstreamid_value",
-  
+
   // UI
   MODAL_CUSTOM_PAGE: "ccaasfde_dispositionrecommendation_d051d",
   CIF_END_CONVERSATION_EVENT: "EndConversationEvent",
-  
+
+  // Limits
+  DISPOSITION_FETCH_LIMIT: 500,
+  MAX_PAYLOAD_CHARS: 200000,
+
   // Cache
   DISPOSITION_CACHE_TTL_MS: 5 * 60 * 1000,  // 5 minutes - dispositions rarely change
   WORKSTREAM_CACHE_TTL_MS: 30 * 60 * 1000,  // 30 minutes - workstream even more stable
-  
+
   // Session storage key prefix for duplicate modal prevention (v2.1)
   SESSION_STORAGE_PREFIX: "ccaasfde_dispo_handled_",
   SESSION_STORAGE_TTL_MS: 30 * 60 * 1000,   // 30 minutes - generous TTL for session storage entries
-  
+
+  // In-memory guard lifetime
+  HANDLED_GUARD_TTL_MS: 5 * 60 * 1000,
+
   // Debug
-  DEBUG_PREFIX: "[ccaasfde dispo v2.1]",
-  VERSION: "2.1.0-2026-02-15"
+  DEBUG_PREFIX: "[ccaasfde dispo v2.2]",
+  VERSION: "2.2.0"
 });
 
 // ===== GLOBAL CACHE (shared across all form instances) =====
-// This is critical for high-volume: agents handle multiple conversations
-// and we don't want to re-fetch the same data for each session
+// Agents handle multiple conversations; we don't want to re-fetch the same
+// data for each session.
 const GlobalCache = {
-  // Disposition codes by workstream ID (or "global" for all-workstream codes)
-  // Structure: { [workstreamId]: { data: [...], timestamp: Date.now(), promise: null } }
+  // Structure: { [workstreamId]: { data: [...], timestamp: Date.now() } }
   dispositions: new Map(),
-  
-  // Workstream ID by conversation/liveworkitem ID
+
   // Structure: { [lwiId]: { workstreamId: "...", timestamp: Date.now() } }
   workstreams: new Map(),
-  
+
   // In-flight promises for deduplication
-  // Prevents multiple concurrent requests for the same resource
   pendingRequests: new Map(),
-  
-  // Check if cache entry is valid
+
   isValid(entry, ttlMs) {
-    return entry && (Date.now() - entry.timestamp) < ttlMs;
+    return !!entry && (Date.now() - entry.timestamp) < ttlMs;
   },
-  
-  // Clear expired entries (call periodically or on low memory)
+
   cleanup() {
     const now = Date.now();
     for (const [key, entry] of this.dispositions) {
@@ -88,8 +112,23 @@ const GlobalCache = {
   }
 };
 
-// Cleanup every 10 minutes
-setInterval(() => GlobalCache.cleanup(), 10 * 60 * 1000);
+// If the script is evaluated again (form reload), retire the previous copy first. Otherwise its
+// CIF callback stays registered next to the new one and a single end event opens two modals.
+try { global.__ccaasfdeCopilot?.dispose?.(); } catch {}
+let disposed = false;
+const registeredCallbacks = [];
+
+// Cleanup every 10 minutes.
+const cleanupTimer = setInterval(() => GlobalCache.cleanup(), 10 * 60 * 1000);
+
+function dispose() {
+  disposed = true;
+  try { clearInterval(cleanupTimer); } catch {}
+  for (const callback of registeredCallbacks) {
+    try { global.Microsoft?.CIFramework?.removeHandler?.(CONFIG.CIF_END_CONVERSATION_EVENT, callback); } catch {}
+  }
+  registeredCallbacks.length = 0;
+}
 
 // ===== LOGGING =====
 const log = {
@@ -109,53 +148,21 @@ const log = {
 
 // ===== UTILITY FUNCTIONS =====
 const Utils = {
-  sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
-  
   cleanGuid: (id) => (id || "").replace(/[{}]/g, "").toLowerCase(),
-  
-  formatGuidForOData: (id) => {
-    if (!id) return "";
-    const clean = Utils.cleanGuid(id);
-    return clean.startsWith("guid'") ? clean : clean;  // Modern Dataverse doesn't need guid'' wrapper
-  },
-  
+
   // Deduplicated async operation - prevents duplicate concurrent requests
   async dedupedAsync(cacheKey, asyncFn) {
-    // If there's already a pending request for this key, return that promise
     if (GlobalCache.pendingRequests.has(cacheKey)) {
       log.debug("dedupe hit", { cacheKey });
       return GlobalCache.pendingRequests.get(cacheKey);
     }
-    
-    // Create new promise and store it
+
     const promise = asyncFn().finally(() => {
       GlobalCache.pendingRequests.delete(cacheKey);
     });
-    
+
     GlobalCache.pendingRequests.set(cacheKey, promise);
     return promise;
-  },
-  
-  // Timeout wrapper with AbortController support
-  async withTimeout(promise, ms, label = "timeout") {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), ms);
-    
-    try {
-      const result = await Promise.race([
-        promise,
-        new Promise((_, reject) => {
-          controller.signal.addEventListener("abort", () => {
-            reject(new Error(`${label} (${ms}ms)`));
-          });
-        })
-      ]);
-      clearTimeout(timeoutId);
-      return result;
-    } catch (e) {
-      clearTimeout(timeoutId);
-      throw e;
-    }
   }
 };
 
@@ -163,43 +170,35 @@ const Utils = {
 // Persists across form reloads within the same browser session.
 // Prevents the duplicate modal when agent closes the conversation form/tab.
 const SessionGuard = {
-  // Check if this conversation was already prompted for disposition
   isHandled(conversationId) {
     if (!conversationId) return false;
     try {
       const key = CONFIG.SESSION_STORAGE_PREFIX + conversationId;
       const val = sessionStorage.getItem(key);
       if (!val) return false;
-      
-      // Check if the stored timestamp is still within TTL
+
       const storedTime = parseInt(val, 10);
       if (isNaN(storedTime)) return false;
-      
+
       if ((Date.now() - storedTime) > CONFIG.SESSION_STORAGE_TTL_MS) {
-        // Expired - clean it up
         sessionStorage.removeItem(key);
         return false;
       }
-      
+
       return true;
     } catch {
-      // sessionStorage not available - fall through to existing in-memory guards
+      // sessionStorage not available - fall through to in-memory guards
       return false;
     }
   },
-  
-  // Mark this conversation as handled
+
   markHandled(conversationId) {
     if (!conversationId) return;
     try {
-      const key = CONFIG.SESSION_STORAGE_PREFIX + conversationId;
-      sessionStorage.setItem(key, Date.now().toString());
-    } catch {
-      // sessionStorage not available - no-op, in-memory guards still work
-    }
+      sessionStorage.setItem(CONFIG.SESSION_STORAGE_PREFIX + conversationId, Date.now().toString());
+    } catch {}
   },
-  
-  // Remove the handled mark (e.g., if modal was cancelled and we want to allow retry)
+
   unmark(conversationId) {
     if (!conversationId) return;
     try {
@@ -210,20 +209,18 @@ const SessionGuard = {
 
 // ===== DATA FETCHING =====
 const DataService = {
-  
+
   // Get workstream ID from live work item - with caching
   async getWorkstreamId(lwiId) {
     const cleanId = Utils.cleanGuid(lwiId);
     if (!cleanId) return null;
-    
-    // Check cache first
+
     const cached = GlobalCache.workstreams.get(cleanId);
     if (GlobalCache.isValid(cached, CONFIG.WORKSTREAM_CACHE_TTL_MS)) {
       log.debug("workstream cache hit", { lwiId: cleanId, workstreamId: cached.workstreamId });
       return cached.workstreamId;
     }
-    
-    // Fetch with deduplication
+
     return Utils.dedupedAsync(`ws_${cleanId}`, async () => {
       const startTime = Date.now();
       try {
@@ -232,86 +229,86 @@ const DataService = {
           cleanId,
           `?$select=${CONFIG.WORKSTREAM_LOOKUP}`
         );
-        
+
         const workstreamId = Utils.cleanGuid(res?.[CONFIG.WORKSTREAM_LOOKUP]);
-        
-        // Cache the result
+
         if (workstreamId) {
-          GlobalCache.workstreams.set(cleanId, {
-            workstreamId,
-            timestamp: Date.now()
-          });
+          GlobalCache.workstreams.set(cleanId, { workstreamId, timestamp: Date.now() });
         }
-        
+
         log.perf("getWorkstreamId", startTime);
         log.debug("workstream resolved", { lwiId: cleanId, workstreamId });
         return workstreamId;
-        
+
       } catch (e) {
         log.error("getWorkstreamId failed", { lwiId: cleanId, error: e?.message });
         return null;
       }
     });
   },
-  
+
   // Get disposition codes - with caching and workstream filtering
   // Priority: 1) Workstream-specific, 2) Global (appliestoallworkstreams), 3) All active
   async getDispositions(workstreamId = null) {
     const cacheKey = workstreamId ? Utils.cleanGuid(workstreamId) : "global";
-    
-    // Check cache first
+
     const cached = GlobalCache.dispositions.get(cacheKey);
     if (GlobalCache.isValid(cached, CONFIG.DISPOSITION_CACHE_TTL_MS)) {
       log.debug("disposition cache hit", { cacheKey, count: cached.data.length });
       return cached.data;
     }
-    
-    // Fetch with deduplication
+
     return Utils.dedupedAsync(`dispo_${cacheKey}`, async () => {
       const startTime = Date.now();
-      
+
       let dispositions = [];
-      
-      // Strategy 1: Try workstream-specific first
+
       if (workstreamId) {
         dispositions = await this._fetchWorkstreamDispositions(workstreamId);
         log.debug("workstream dispositions", { workstreamId, count: dispositions.length });
       }
-      
-      // Strategy 2: If no workstream-specific, get global (appliestoallworkstreams = true)
+
       if (dispositions.length === 0) {
         dispositions = await this._fetchGlobalDispositions();
         log.debug("global dispositions", { count: dispositions.length });
       }
-      
-      // Strategy 3: Ultimate fallback - all active dispositions
+
       if (dispositions.length === 0) {
         dispositions = await this._fetchAllDispositions();
         log.debug("all dispositions fallback", { count: dispositions.length });
       }
-      
-      // Cache the result
-      GlobalCache.dispositions.set(cacheKey, {
-        data: dispositions,
-        timestamp: Date.now()
-      });
-      
+
+      if (dispositions.length >= CONFIG.DISPOSITION_FETCH_LIMIT) {
+        log.warn("disposition fetch limit reached - some codes may be missing from AI recommendations and search", {
+          limit: CONFIG.DISPOSITION_FETCH_LIMIT
+        });
+      }
+
+      GlobalCache.dispositions.set(cacheKey, { data: dispositions, timestamp: Date.now() });
+
       log.perf("getDispositions", startTime);
       log.debug("dispositions loaded", { cacheKey, count: dispositions.length });
       return dispositions;
     });
   },
-  
-  // Fetch dispositions linked to a specific workstream via N:N intersect table
-  // Table: msdyn_ocdispositioncode_msdyn_liveworkstream
-  // Columns: msdyn_ocdispositioncodeid, msdyn_liveworkstreamid
+
+  _mapDisposition(d, source) {
+    return {
+      id: d.msdyn_ocdispositioncodeid,
+      label: d.msdyn_dispositioncodevalue || "",
+      code: d.msdyn_name || "",
+      categoryId: d._msdyn_dispositioncodecategoryid_value || null,
+      source
+    };
+  },
+
+  // Fetch dispositions linked to a specific workstream via the N:N intersect table
+  // msdyn_ocdispositioncode_msdyn_liveworkstream
   async _fetchWorkstreamDispositions(workstreamId) {
     const cleanId = Utils.cleanGuid(workstreamId);
-    
-    // Query the N:N intersect table directly, then expand to get disposition details
-    // This is the most efficient approach for N:N relationships
+
     const fetchXml = `
-      <fetch top="500" distinct="true">
+      <fetch top="${CONFIG.DISPOSITION_FETCH_LIMIT}" distinct="true">
         <entity name="msdyn_ocdispositioncode">
           <attribute name="msdyn_ocdispositioncodeid" />
           <attribute name="msdyn_name" />
@@ -330,169 +327,51 @@ const DataService = {
         </entity>
       </fetch>
     `.trim();
-    
+
     try {
-      const encodedFetch = encodeURIComponent(fetchXml);
       const res = await Xrm.WebApi.retrieveMultipleRecords(
         CONFIG.DISPOSITION_ENTITY,
-        `?fetchXml=${encodedFetch}`
+        `?fetchXml=${encodeURIComponent(fetchXml)}`
       );
-      
-      return (res?.entities || []).map(d => ({
-        id: d.msdyn_ocdispositioncodeid,
-        label: d.msdyn_dispositioncodevalue || "",
-        code: d.msdyn_name || "",
-        categoryId: d._msdyn_dispositioncodecategoryid_value || null,
-        source: "workstream"
-      }));
-      
+      return (res?.entities || []).map(d => this._mapDisposition(d, "workstream"));
     } catch (e) {
       log.warn("workstream dispositions fetch failed, will use global", { error: e?.message });
       return [];
     }
   },
-  
-  // Fetch all global disposition codes (applies to all workstreams)
-  // Uses msdyn_appliestoallworkstreams = true filter
+
+  // Fetch all global disposition codes (msdyn_appliestoallworkstreams = true)
   async _fetchGlobalDispositions() {
-    try {
-      const query = 
-        `?$select=msdyn_ocdispositioncodeid,msdyn_name,msdyn_dispositioncodevalue,_msdyn_dispositioncodecategoryid_value` +
-        `&$filter=statecode eq 0 and msdyn_appliestoallworkstreams eq true` +
-        `&$orderby=msdyn_dispositioncodevalue asc` +
-        `&$top=500`;
-      
-      const res = await Xrm.WebApi.retrieveMultipleRecords(CONFIG.DISPOSITION_ENTITY, query);
-      
-      return (res?.entities || []).map(d => ({
-        id: d.msdyn_ocdispositioncodeid,
-        label: d.msdyn_dispositioncodevalue || "",
-        code: d.msdyn_name || "",
-        categoryId: d._msdyn_dispositioncodecategoryid_value || null,
-        source: "global"
-      }));
-      
-    } catch (e) {
-      log.error("global dispositions fetch failed", { error: e?.message });
-      return [];
-    }
+    return this._fetchByFilter("statecode eq 0 and msdyn_appliestoallworkstreams eq true", "global");
   },
-  
-  // Fetch ALL active disposition codes (fallback when no workstream-specific or global)
+
+  // Fetch ALL active disposition codes (fallback)
   async _fetchAllDispositions() {
+    return this._fetchByFilter("statecode eq 0", "all");
+  },
+
+  async _fetchByFilter(filter, source) {
     try {
-      const query = 
+      const query =
         `?$select=msdyn_ocdispositioncodeid,msdyn_name,msdyn_dispositioncodevalue,_msdyn_dispositioncodecategoryid_value` +
-        `&$filter=statecode eq 0` +
+        `&$filter=${filter}` +
         `&$orderby=msdyn_dispositioncodevalue asc` +
-        `&$top=500`;
-      
+        `&$top=${CONFIG.DISPOSITION_FETCH_LIMIT}`;
+
       const res = await Xrm.WebApi.retrieveMultipleRecords(CONFIG.DISPOSITION_ENTITY, query);
-      
-      return (res?.entities || []).map(d => ({
-        id: d.msdyn_ocdispositioncodeid,
-        label: d.msdyn_dispositioncodevalue || "",
-        code: d.msdyn_name || "",
-        categoryId: d._msdyn_dispositioncodecategoryid_value || null,
-        source: "all"
-      }));
-      
+      return (res?.entities || []).map(d => this._mapDisposition(d, source));
     } catch (e) {
-      log.error("all dispositions fetch failed", { error: e?.message });
-      return [];
-    }
-  },
-  
-  // NOTE: Copilot summary is fetched by the Custom Page, not JS
-  // This keeps JS completely non-blocking
-  
-  // Save the agent's selected disposition to the conversation
-  // Creates a record in msdyn_conversationdispositioncodemap
-  // Schema: https://learn.microsoft.com/en-us/dynamics365/developer/reference/entities/msdyn_conversationdispositioncodemap
-  // 
-  // Required fields:
-  //   - msdyn_dispositioncodevalue (String, max 200)
-  //   - msdyn_ocliveworkitemid (Lookup to msdyn_ocliveworkitem via activityid)
-  // Optional fields:
-  //   - msdyn_name (String, max 100)
-  //   - msdyn_ocdispositioncodeid (Lookup to msdyn_ocdispositioncode)
-  //
-  async saveDisposition(lwiId, dispositionId, dispositionValue) {
-    const cleanLwiId = Utils.cleanGuid(lwiId);
-    const cleanDispoId = dispositionId ? Utils.cleanGuid(dispositionId) : null;
-    
-    if (!cleanLwiId || !dispositionValue) {
-      log.error("saveDisposition: missing required params", { lwiId, dispositionValue });
-      return { success: false, error: "Missing required parameters" };
-    }
-    
-    log.debug("saveDisposition called", { lwiId: cleanLwiId, dispositionId: cleanDispoId, value: dispositionValue });
-    
-    try {
-      // Build the record for Conversation Disposition Code Map table
-      // EntitySetName: msdyn_conversationdispositioncodemaps
-      const record = {
-        // Required: Disposition code value (max 200 chars)
-        "msdyn_dispositioncodevalue": dispositionValue.substring(0, 200),
-        // Optional: Name field (max 100 chars)
-        "msdyn_name": dispositionValue.substring(0, 100),
-        // Required: Link to the Live Work Item (Conversation)
-        // The lookup references msdyn_ocliveworkitem.activityid
-        "msdyn_ocliveworkitemid@odata.bind": `/msdyn_ocliveworkitems(${cleanLwiId})`
-      };
-      
-      // Optional: Link to the OC Disposition Code if we have the ID
-      if (cleanDispoId) {
-        record["msdyn_ocdispositioncodeid@odata.bind"] = `/msdyn_ocdispositioncodes(${cleanDispoId})`;
-      }
-      
-      log.debug("creating record", { entity: "msdyn_conversationdispositioncodemap", record });
-      
-      const result = await Xrm.WebApi.createRecord("msdyn_conversationdispositioncodemap", record);
-      
-      log.debug("disposition saved successfully", { 
-        lwiId: cleanLwiId, 
-        dispositionId: cleanDispoId,
-        mapId: result.id 
-      });
-      
-      return { success: true, id: result.id };
-      
-    } catch (e) {
-      log.error("saveDisposition failed", { 
-        error: e?.message, 
-        lwiId: cleanLwiId, 
-        dispositionId: cleanDispoId,
-        stack: e?.stack 
-      });
-      return { success: false, error: e?.message };
-    }
-  },
-  
-  // Fetch disposition categories (for grouping in UI)
-  async getDispositionCategories() {
-    try {
-      const query = 
-        `?$select=msdyn_dispositioncodecategoryid,msdyn_categoryname` +
-        `&$filter=statecode eq 0` +
-        `&$orderby=msdyn_categoryname asc`;
-      
-      const res = await Xrm.WebApi.retrieveMultipleRecords("msdyn_dispositioncodecategory", query);
-      
-      return (res?.entities || []).map(c => ({
-        id: c.msdyn_dispositioncodecategoryid,
-        name: c.msdyn_categoryname || ""
-      }));
-      
-    } catch (e) {
-      log.warn("getDispositionCategories failed", { error: e?.message });
+      log.error(`${source} dispositions fetch failed`, { error: e?.message });
       return [];
     }
   }
+
+  // NOTE: The Copilot summary is fetched by the Cloud Flow, and the selected
+  // codes are saved by the Custom Page. This keeps the JS non-blocking.
 };
 
 // ===== FORM STATE MANAGER =====
-// Per-form instance state (not global - each form has its own lifecycle)
+// Per-form instance state (each form has its own lifecycle)
 class FormState {
   constructor(formContext) {
     this.formContext = formContext;
@@ -505,45 +384,40 @@ class FormState {
     this.modalOpened = false;
     this.initPromise = null;
   }
-  
+
   // Initialize all data in parallel - non-blocking
   async initialize() {
     if (this.isInitialized || this.isLoading) {
       return this.initPromise;
     }
-    
+
     this.isLoading = true;
     const startTime = Date.now();
-    
+
     this.initPromise = (async () => {
       try {
-        // Get conversation ID from form
         this.conversationId = Utils.cleanGuid(this.formContext.data.entity.getId());
-        
+
         if (!this.conversationId) {
           log.warn("no conversation ID on form");
           return;
         }
-        
-        // PARALLEL FETCH: workstream ID and global dispositions simultaneously
-        // This is the key optimization - we don't wait for workstream before fetching dispositions
+
+        // Fetch the workstream and global dispositions simultaneously
         const [workstreamId, globalDispositions] = await Promise.all([
           DataService.getWorkstreamId(this.conversationId),
-          DataService.getDispositions(null)  // Start with global while we resolve workstream
+          DataService.getDispositions(null)
         ]);
-        
+
         this.workstreamId = workstreamId;
-        
-        // If we got a workstream, fetch workstream-specific dispositions
-        // (may already be cached from another session with same workstream)
+
         if (workstreamId) {
           const wsDispositions = await DataService.getDispositions(workstreamId);
-          // Use workstream-specific if available, otherwise fall back to global
           this.dispositions = wsDispositions.length > 0 ? wsDispositions : globalDispositions;
         } else {
           this.dispositions = globalDispositions;
         }
-        
+
         this.isInitialized = true;
         log.perf("form state initialized", startTime);
         log.debug("form ready", {
@@ -551,17 +425,17 @@ class FormState {
           workstreamId: this.workstreamId,
           dispositionCount: this.dispositions.length
         });
-        
+
       } catch (e) {
         log.error("form state init failed", { error: e?.message });
       } finally {
         this.isLoading = false;
       }
     })();
-    
+
     return this.initPromise;
   }
-  
+
   // Ensure data is ready (used before opening modal)
   async ensureReady() {
     if (!this.isInitialized && !this.isLoading) {
@@ -573,7 +447,6 @@ class FormState {
   }
 }
 
-// Store FormState instances by form ID
 const formStates = new WeakMap();
 
 function getFormState(formContext) {
@@ -585,89 +458,115 @@ function getFormState(formContext) {
 
 // ===== CIF EVENT HANDLING =====
 const CIFHandler = {
-  // Track if we've already handled this conversation end globally
+  // Conversations already handled in this page (across all form instances)
   _handledConversations: new Set(),
-  
-  // Register for end conversation event
+
   register(formContext) {
-    if (!(window.Microsoft?.CIFramework)) {
+    if (!(global.Microsoft?.CIFramework)) {
       log.debug("CIF not available");
       return;
     }
-    
+
     const state = getFormState(formContext);
     if (state.cifHandlerId) return;  // Already registered
-    
-    state.cifHandlerId = window.Microsoft.CIFramework.addHandler(
-      CONFIG.CIF_END_CONVERSATION_EVENT,
-      async (eventData) => {
-        try {
-          await this.handleEndConversation(formContext, eventData);
-        } catch (e) {
-          log.error("CIF handler error", { error: e?.message });
-        }
+
+    const callback = async (eventData) => {
+      if (disposed) return;
+      try {
+        await this.handleEndConversation(formContext, eventData);
+      } catch (e) {
+        log.error("CIF handler error", { error: e?.message });
       }
-    );
-    
+    };
+    registeredCallbacks.push(callback);
+    state.cifHandlerId = global.Microsoft.CIFramework.addHandler(CONFIG.CIF_END_CONVERSATION_EVENT, callback);
+
     log.debug("CIF handler registered", { handlerId: state.cifHandlerId });
   },
-  
-  // Handle conversation end event
+
+  _isWorkstreamAllowed(workstreamId) {
+    const allow = CONFIG.ENABLED_WORKSTREAM_IDS;
+    if (!allow || allow.length === 0) return true;
+    return allow.map(Utils.cleanGuid).includes(Utils.cleanGuid(workstreamId));
+  },
+
+  _releaseGuards(state) {
+    state.modalOpened = false;
+    this._handledConversations.delete(state.conversationId);
+    SessionGuard.unmark(state.conversationId);
+  },
+
   async handleEndConversation(formContext, eventData) {
+    if (!CONFIG.ENABLED) {
+      log.debug("disabled via CONFIG.ENABLED, skipping");
+      return;
+    }
+
     const state = getFormState(formContext);
-    
-    // Prevent duplicate modal opens for this form instance
+
     if (state.modalOpened) {
       log.debug("modal already opened for this form instance, skipping");
       return;
     }
-    
+
     // Validate this event is for our conversation
     const eventLwi = this._getLwiFromEvent(eventData);
-    if (eventLwi && state.conversationId && 
+    if (eventLwi && state.conversationId &&
         Utils.cleanGuid(eventLwi) !== state.conversationId) {
       log.debug("ignoring end event for different conversation");
       return;
     }
-    
-    // Check if we've already handled this conversation globally (across all form instances)
+
     const conversationKey = state.conversationId || eventLwi;
     if (conversationKey && this._handledConversations.has(conversationKey)) {
       log.debug("conversation already handled globally, skipping", { conversationKey });
       return;
     }
-    
-    // v2.1 FIX: Check sessionStorage - survives form reloads unlike in-memory guards above.
-    // This is the key fix for the duplicate modal on conversation form/tab close.
+
+    // sessionStorage survives form reloads unlike the in-memory guards above
     if (conversationKey && SessionGuard.isHandled(conversationKey)) {
       log.debug("conversation already handled (sessionStorage), skipping", { conversationKey });
       return;
     }
-    
-    // Ensure data is ready (should already be cached from onLoad)
+
+    // Data should already be cached from onLoad
     await state.ensureReady();
-    
+
     if (!state.conversationId) {
       log.warn("cannot open modal - no conversation ID");
       return;
     }
-    
-    // Mark as handled both locally and globally
+
+    if (!this._isWorkstreamAllowed(state.workstreamId)) {
+      log.debug("workstream not in ENABLED_WORKSTREAM_IDS, skipping", { workstreamId: state.workstreamId });
+      return;
+    }
+
+    if (!state.dispositions || state.dispositions.length === 0) {
+      log.debug("no disposition codes available for this conversation, skipping");
+      return;
+    }
+
     state.modalOpened = true;
     this._handledConversations.add(state.conversationId);
-    
-    // v2.1 FIX: Also persist to sessionStorage so it survives form reloads
     SessionGuard.markHandled(state.conversationId);
-    
-    // Clean up old entries after 5 minutes to prevent memory leak
+
+    // Don't keep the in-memory guard forever
+    const guardedId = state.conversationId;
     setTimeout(() => {
-      this._handledConversations.delete(state.conversationId);
-    }, 5 * 60 * 1000);
-    
+      this._handledConversations.delete(guardedId);
+    }, CONFIG.HANDLED_GUARD_TTL_MS);
+
     log.debug("opening modal for conversation", { conversationId: state.conversationId });
-    await ModalService.open(state);
+    const outcome = await ModalService.open(state);
+
+    // A failed open must not consume the single chance to prompt the agent.
+    // Cancelling / closing the dialog is intentional and stays handled (see v2.1).
+    if (outcome === "failed") {
+      this._releaseGuards(state);
+    }
   },
-  
+
   _getLwiFromEvent(eventData) {
     try {
       const raw = eventData?.get?.("value");
@@ -682,177 +581,140 @@ const CIFHandler = {
 
 // ===== MODAL SERVICE =====
 const ModalService = {
-  
+
+  // Returns "closed" | "cancelled" | "failed"
   async open(formState) {
     const startTime = Date.now();
-    
-    // Prepare data payload for custom page
+
     const payload = {
-      summary: "",  // Summary is fetched in the modal (async)
+      summary: "",  // Summary is fetched by the Cloud Flow (async)
       conversationId: formState.conversationId || "",
       workstreamId: formState.workstreamId || "",
       dispositions: formState.dispositions || [],
       version: CONFIG.VERSION
     };
-    
+
     const pageInput = {
       pageType: "custom",
       name: CONFIG.MODAL_CUSTOM_PAGE,
       recordId: JSON.stringify(payload)
     };
-    
+
+    if (pageInput.recordId.length > CONFIG.MAX_PAYLOAD_CHARS) {
+      log.warn("modal payload is very large - the custom page may fail to load", {
+        chars: pageInput.recordId.length,
+        dispositionCount: payload.dispositions.length
+      });
+    }
+
     const navOptions = {
       target: 2,      // Dialog
       width: 850,
       height: 750,
       position: 1     // Center
     };
-    
-    log.debug("opening modal", { 
+
+    log.debug("opening modal", {
       conversationId: payload.conversationId,
-      dispositionCount: payload.dispositions.length 
+      dispositionCount: payload.dispositions.length
     });
-    
+
     try {
-      // navigateTo returns a promise that resolves when modal closes
+      // Resolves when the modal closes (Save, Cancel and the X all resolve)
       await Xrm.Navigation.navigateTo(pageInput, navOptions);
       log.perf("modal closed", startTime);
-      
-      // Custom Page handles all saving via Power Fx Patch
-      // Refresh the form to show the new disposition codes
-      log.debug("modal closed, refreshing form");
-      
-      // Click the Refresh command button programmatically
-      try {
-          
-          // Try multiple selectors and contexts (Dynamics uses iframes)
-          const selectors = [
-            '[data-lp-id*="Refresh"]',
-            '[aria-label="Refresh"]',
-            'button[title="Refresh"]',
-            '[data-id*="Refresh"]'
-          ];
-          
-          // Search in current document, parent, and top window
-          const contexts = [document];
-          try { if (window.parent?.document) contexts.push(window.parent.document); } catch {}
-          try { if (window.top?.document) contexts.push(window.top.document); } catch {}
-          
-          let refreshButton = null;
-          let foundIn = "";
-          
-          for (const ctx of contexts) {
-            for (const sel of selectors) {
-              try {
-                refreshButton = ctx.querySelector(sel);
-                if (refreshButton) {
-                  foundIn = ctx === document ? "document" : ctx === window.parent?.document ? "parent" : "top";
-                  break;
-                }
-              } catch {}
-            }
-            if (refreshButton) break;
-          }
-          
-        if (refreshButton) {
-          refreshButton.click();
-          log.debug("refresh button clicked", { foundIn, tagName: refreshButton.tagName });
-        } else {
-          log.warn("refresh button not found in any context");
-        }
-      } catch (btnErr) {
-        log.warn("refresh button click failed", { error: btnErr?.message });
-      }
-      
     } catch (e) {
-      // User may have cancelled the dialog - this is not an error
-      if (e?.message?.includes("cancel") || e?.code === 1) {
+      if (e?.message?.toLowerCase?.().includes("cancel") || e?.code === 1) {
         log.debug("modal cancelled by user");
-      } else {
-        log.error("modal open failed", { error: e?.message });
+        return "cancelled";
       }
-      formState.modalOpened = false;  // Allow retry
-      // v2.1: Do NOT unmark sessionStorage here - even if user cancels the modal,
-      // we don't want it to re-fire on form close. The agent can re-trigger
-      // disposition manually if needed.
+      log.error("modal open failed", { error: e?.message });
+      return "failed";
     }
-  }
-};
 
-// ===== MESSAGE LISTENER (optional - for future use) =====
-// Custom Page handles save and shows its own success/error notifications
-// This listener is kept for future extensibility if needed
-const MessageHandler = {
-  _registered: false,
-  _formContext: null,
-  
-  register(formContext) {
-    if (this._registered) return;
-    this._formContext = formContext;
-    
-    window.addEventListener("message", async (evt) => {
-      try {
-        // Custom Page doesn't send messages back in current flow
-        // But if it does in future, handle here
-        if (!evt?.data || evt.data.type !== "COPILOT_DISPO_ACCEPT") return;
-        
-        const { disposition, dispositionValue, success } = evt.data;
-        log.debug("disposition message received (optional)", { disposition, success });
-        
-        // Show toast if message received (optional - Custom Page already shows notification)
-        if (success && formContext?.ui) {
-          const msg = `✓ Disposition saved: ${dispositionValue || disposition}`;
-          formContext.ui.setFormNotification(msg, "INFO", "ccaasfde_dispo_confirm");
-          setTimeout(() => {
-            try { formContext.ui.clearFormNotification("ccaasfde_dispo_confirm"); } catch {}
-          }, 5000);
-        }
-        
-      } catch (e) {
-        log.error("message handler error", { error: e?.message });
+    // The Custom Page saves via Power Fx Patch; refresh the form to show the new codes
+    await this.refreshForm(formState.formContext);
+    return "closed";
+  },
+
+  async refreshForm(formContext) {
+    try {
+      if (typeof formContext?.data?.refresh === "function") {
+        await formContext.data.refresh(false);
+        log.debug("form refreshed via formContext.data.refresh");
+        return true;
       }
-    });
-    
-    this._registered = true;
-    log.debug("message handler registered");
+    } catch (e) {
+      log.warn("formContext.data.refresh failed, trying Refresh button fallback", { error: e?.message });
+    }
+    return this._clickRefreshButton();
+  },
+
+  // Fallback only. Dynamics renders inside iframes, so look in parent/top too.
+  _clickRefreshButton() {
+    try {
+      const selectors = [
+        '[data-lp-id*="Refresh"]',
+        '[aria-label="Refresh"]',
+        'button[title="Refresh"]',
+        '[data-id*="Refresh"]'
+      ];
+
+      const contexts = [];
+      try { if (global.document) contexts.push(global.document); } catch {}
+      try { if (global.parent?.document) contexts.push(global.parent.document); } catch {}
+      try { if (global.top?.document) contexts.push(global.top.document); } catch {}
+
+      for (const ctx of contexts) {
+        for (const sel of selectors) {
+          let button = null;
+          try { button = ctx.querySelector(sel); } catch {}
+          if (button) {
+            button.click();
+            log.debug("refresh button clicked (fallback)", { selector: sel });
+            return true;
+          }
+        }
+      }
+      log.warn("refresh button not found in any context");
+    } catch (e) {
+      log.warn("refresh button click failed", { error: e?.message });
+    }
+    return false;
   }
 };
 
 // ===== MAIN ENTRY POINT =====
+// Registered on the Active Conversation form (onLoad, passExecutionContext = true).
 async function onLoad(executionContext) {
   const formContext = executionContext.getFormContext();
   const startTime = Date.now();
-  
+
   try {
-    // Expose version for debugging
-    window.top.__ccaasfdeCopilotVersion = CONFIG.VERSION;
+    global.top.__ccaasfdeCopilotVersion = CONFIG.VERSION;
   } catch {}
-  
+
   log.debug("onLoad started", { version: CONFIG.VERSION });
-  
-  // Get or create form state
+
   const state = getFormState(formContext);
-  
-  // Register event handlers (synchronous, fast)
+
+  // Synchronous, fast
   CIFHandler.register(formContext);
-  MessageHandler.register(formContext);
-  
-  // Initialize data in background (non-blocking)
-  // This is fire-and-forget - the form loads instantly while data fetches in parallel
+
+  // Fire-and-forget: the form loads instantly while data fetches in parallel
   state.initialize().then(() => {
     log.perf("background init complete", startTime);
   }).catch(e => {
     log.error("background init failed", { error: e?.message });
   });
-  
-  // Form loads immediately - data loading is completely non-blocking
+
   log.perf("onLoad complete (sync)", startTime);
 }
 
 // ===== TESTING / DEBUG UTILITIES =====
-// Run from F12 console: testOpenModal()
+// Run from the F12 console: __ccaasfdeCopilot.testOpenModal()
 async function testOpenModal() {
-  const mockState = {
+  return ModalService.open({
     conversationId: "test-conversation-123",
     workstreamId: "test-workstream-456",
     dispositions: [
@@ -860,12 +722,9 @@ async function testOpenModal() {
       { id: "d2", code: "TECH_SUPPORT", label: "Technical Support" },
       { id: "d3", code: "ACCOUNT_UPDATE", label: "Account Update" }
     ]
-  };
-  
-  await ModalService.open(mockState);
+  });
 }
 
-// Debug: View cache state
 function debugCache() {
   return {
     dispositions: Object.fromEntries(GlobalCache.dispositions),
@@ -874,7 +733,6 @@ function debugCache() {
   };
 }
 
-// Debug: Clear all caches
 function clearCache() {
   GlobalCache.dispositions.clear();
   GlobalCache.workstreams.clear();
@@ -882,15 +740,23 @@ function clearCache() {
   log.debug("cache cleared");
 }
 
-// Export for debugging
+// Form event handler - must be a global function
+global.onLoad = onLoad;
+
 try {
-  window.__ccaasfdeCopilot = {
+  global.__ccaasfdeCopilot = {
     version: CONFIG.VERSION,
+    cleanupTimer,
+    dispose,
     debugCache,
     clearCache,
     testOpenModal,
     GlobalCache,
     DataService,
-    SessionGuard  // v2.1: exposed for debugging
+    SessionGuard,
+    CIFHandler,
+    ModalService
   };
 } catch {}
+
+})(typeof window !== "undefined" ? window : globalThis);

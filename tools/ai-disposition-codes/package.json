@@ -1,0 +1,14 @@
+{
+  "name": "ai-disposition-codes-tools",
+  "private": true,
+  "type": "module",
+  "description": "Build and test tooling for the AI Recommended Disposition Codes solution (no runtime dependencies)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "test": "node --test tests/"
+  }
+}

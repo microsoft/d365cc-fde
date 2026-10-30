@@ -1,0 +1,317 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  Screen1:
+    Properties:
+      Fill: =RGBA(255, 255, 255, 1)
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: "=Set(varStartTime, Now());\nSet(varIsLoading, true);\nSet(varLoadingMessage, \"Analyzing conversation and generating recommendations...\");\nSet(varHasError, false);\nSet(varErrorMessage, \"\");\nSet(varSelectedDisposition, {dispositionId: \"\", code: \"\", label: \"\", categoryId: \"\", source: \"\"});\n\nClearCollect(colSelectedTags, {label: \"\"});\nClear(colSelectedTags);\n\nSet(varPayload, Param(\"recordId\"));\n\nIf(!IsBlank(varPayload) && varPayload <> \"undefined\",\n    Set(varParsedPayload, ParseJSON(varPayload));\n    Set(varConversationId, Text(varParsedPayload.conversationId));\n    Set(varWorkstreamId, Text(varParsedPayload.workstreamId));\n\n    ClearCollect(colDispositions,\n        ForAll(Table(varParsedPayload.dispositions),\n            {\n                dispositionId: Text(ThisRecord.Value.id),\n                code: Text(ThisRecord.Value.code),\n                label: Text(ThisRecord.Value.label),\n                categoryId: Text(ThisRecord.Value.categoryId)\n            }\n        )\n    );\n\n    If(!IsBlank(varConversationId),\n        Set(varIsLoading, true);\n        Set(varLoadingMessage, \"Analyzing conversation and generating recommendations...\");\n\n        // The flow reports its own failures as success=false; IfError covers connector errors and timeouts.\n        // Either way the agent keeps the manual picker.\n        IfError(\n            Set(varFlowResponse, DispositionRecommender.Run(varConversationId, varWorkstreamId, JSON(colDispositions))),\n            Set(varFlowResponse, {response: \"{\"\"success\"\":false,\"\"summary\"\":\"\"\"\",\"\"recommendations\"\":[],\"\"error\"\":\"\"flow_unavailable\"\"}\"})\n        );\n\n        IfError(\n            Set(varResult, ParseJSON(varFlowResponse.response)),\n            Set(varResult, ParseJSON(\"{\"\"success\"\":false,\"\"summary\"\":\"\"\"\",\"\"recommendations\"\":[]}\"))\n        );\n        Set(varSummary, IfError(Text(varResult.summary), \"\"));\n\n        // Keep only recommendations whose id exists in the codes sent to the AI, and take\n        // code/label from our own list so a model typo can never change what is saved.\n        IfError(\n            ClearCollect(colRecommendations,\n                ForAll(\n                    Filter(\n                        ForAll(Table(varResult.recommendations),\n                            {\n                                dispositionId: Lower(Text(ThisRecord.Value.id)),\n                                confidence: IfError(Value(ThisRecord.Value.confidence), 0),\n                                reason: Text(ThisRecord.Value.reason)\n                            }\n                        ) As Rec,\n                        !IsBlank(LookUp(colDispositions, Lower(dispositionId) = Rec.dispositionId))\n                    ) As Valid,\n                    With({match: LookUp(colDispositions, Lower(dispositionId) = Valid.dispositionId)},\n                        {\n                            dispositionId: match.dispositionId,\n                            code: match.code,\n                            label: match.label,\n                            confidence: Valid.confidence,\n                            reason: Valid.reason\n                        }\n                    )\n                )\n            ),\n            Clear(colRecommendations)\n        );\n\n        If(CountRows(colRecommendations) > 0,\n            With(First(colRecommendations),\n                ClearCollect(colSelectedTags, {label: ThisRecord.label});\n                Set(varSelectedDisposition, {dispositionId: ThisRecord.dispositionId, code: ThisRecord.code, label: ThisRecord.label, categoryId: \"\", source: \"recommendation\"})\n            )\n        );\n\n        ClearCollect(colSelectedCodes, colRecommendations);\n        Set(varShowAvailableCodes, false);\n        Set(varIsLoading, false);\n        Set(varLoadingMessage, \"\");\n\n        If(CountRows(colRecommendations) = 0,\n            Set(varSummary, If(IsBlank(varSummary), \"Conversation summary not available yet. Please select a disposition code manually.\", varSummary))\n        ),\n\n        Set(varHasError, true);\n        Set(varIsLoading, false);\n        Set(varErrorMessage, \"Unable to load conversation details. Please close and reopen after the conversation ends.\")\n    ),\n\n    Set(varHasError, true);\n    Set(varIsLoading, false);\n    Set(varErrorMessage, \"This panel opens automatically when a conversation ends. Please close and try again after completing a customer interaction.\");\n    ClearCollect(colDispositions, Blank())\n);\n\nSet(varEndTime, Now());\nSet(varElapsedSeconds, DateDiff(varStartTime, varEndTime, TimeUnit.Milliseconds) / 1000);"
+    Children:
+      - MainContianer:
+          Control: GroupContainer@1.3.0
+          Variant: AutoLayout
+          Properties:
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =12
+            PaddingBottom: =16
+            PaddingLeft: =24
+            PaddingRight: =24
+            PaddingTop: =20
+            Visible: =!Coalesce(varIsLoading, true)
+            Width: =Parent.Width
+          Children:
+            - containerHeader:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  BorderStyle: =BorderStyle.None
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =42
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutMaxHeight: =0
+                  LayoutMaxWidth: =0
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                Children:
+                  - imgLogo:
+                      Control: Image@2.2.3
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.View
+                        Height: =24
+                        HoverBorderColor: =RGBA(0, 0, 0, 0)
+                        HoverFill: =RGBA(0, 0, 0, 0)
+                        Image: =msdyn_CopilotIconWithColor
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PressedBorderColor: =RGBA(0, 0, 0, 0)
+                        PressedFill: =RGBA(0, 0, 0, 0)
+                        Width: =24
+                  - lblRecommendedCodes:
+                      Control: Text@0.0.51
+                      Properties:
+                        FillPortions: =1
+                        Font: =Font.'Segoe UI'
+                        Height: =24
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingLeft: =10
+                        Text: '="Recommended codes for this conversation" '
+                        Weight: ='TextCanvas.Weight'.Semibold
+                        X: =40
+                        Y: =40
+            - lblWarning:
+                Control: Text@0.0.51
+                Properties:
+                  Font: =Font.'Segoe UI'
+                  FontColor: |-
+                    =If(
+                        varHasError,
+                        RGBA(164, 38, 44, 1),
+                        If(
+                            CountRows(colRecommendations) > 0,
+                            RGBA(0, 100, 165, 1),
+                            RGBA(202, 80, 16, 1)
+                        )
+                    )
+                  Size: =12
+                  Text: |-
+                    =If(
+                        varHasError,
+                        varErrorMessage,
+                        If(
+                            CountRows(colRecommendations) > 0,
+                            "These disposition codes are recommended by Copilot based on the conversation. You can add or remove codes before accepting.",
+                            "No AI recommendations available. Pick a disposition code from the list below, or search to narrow it down."
+                        )
+                    )
+                  VerticalAlign: =VerticalAlign.Middle
+                  X: =40
+                  Y: =40
+            - Picker1:
+                Control: CodeComponent
+                ComponentName: cat_PowerCAT.Picker
+                Properties:
+                  FillPortions: =1
+                  HintText: ="Search for disposition codes"
+                  Items: =colSelectedCodes
+                  LayoutMinHeight: =54
+                  MinimumSearchTermLength: =0
+                  NoSuggestionFoundMessage: ="No Codes Found"
+                  OnChange: |-
+                    =If(Self.TagEvent = "Add",
+                        With({
+                            selectedItem: LookUp(colDispositions, label = Self.TagDisplayName),
+                            alreadyAdded: Not(IsBlank(LookUp(colSelectedCodes, Lower(label) = Lower(Self.TagDisplayName))))
+                        },
+                            If(Not(alreadyAdded),
+                                Collect(colSelectedCodes, selectedItem)
+                            )
+                        )
+                    );
+
+                    If(Self.TagEvent = "Remove",
+                        RemoveIf(colSelectedCodes, label = Text(Self.TagDisplayName))
+                    );
+                  SuggestionsDisplayName: ="label"
+                  SuggestionsKey: ="label"
+                  Suggestions_Items: |-
+                    =Filter(
+                        colDispositions,
+                        Not(label in colSelectedCodes.label) && (Len(Self.SearchTerm) = 0 || Self.SearchTerm in label)
+                    )
+                  TagsDisplayName: ="label"
+                  TagsKey: ="label"
+                  Theme: |-
+                    ="{""palette"": {""themePrimary"": ""#0078d4"", ""themeLighterAlt"": ""#e8f4fc"", ""themeLighter"": ""#deecf9"", ""themeLight"": ""#c7e0f4"", ""neutralLighterAlt"": ""#e8f4fc"", ""neutralLighter"": ""#e8f4fc"", ""white"": ""#ffffff""}}"
+                  X: =40
+                  Y: =40
+                Children:
+                  - Label1:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="label"
+                        FieldName: ="label"
+                        FieldType: ="s"
+                        Order: =1
+            - galCodes:
+                Control: Gallery@2.10.0
+                Variant: Vertical
+                Properties:
+                  BorderColor: =RGBA(200, 200, 200, 1)
+                  BorderThickness: =1
+                  FillPortions: =1
+                  Height: =160
+                  Items: |-
+                    =Filter(
+                        colDispositions,
+                        Not(label in colSelectedCodes.label) && (Len(Picker1.SearchTerm) = 0 || Picker1.SearchTerm in label)
+                    )
+                  LayoutMinHeight: =100
+                  LayoutMinWidth: =200
+                  OnSelect: =Collect(colSelectedCodes, ThisItem)
+                  TemplatePadding: =0
+                  TemplateSize: =40
+                  Visible: =!varHasError && CountRows(colRecommendations) = 0
+                  Width: =200
+                  X: =40
+                  Y: =40
+                Children:
+                  - lblCodeName:
+                      Control: Text@0.0.51
+                      Properties:
+                        Align: =Align.Left
+                        Font: =Font.'Segoe UI'
+                        Height: =40
+                        PaddingLeft: =12
+                        Size: =12
+                        Text: =ThisItem.label
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =Parent.TemplateWidth
+                        X: =0
+                        Y: =0
+            - containerAction:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  BorderStyle: =BorderStyle.None
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =42
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =15
+                  LayoutJustifyContent: =LayoutJustifyContent.End
+                  LayoutMaxHeight: =0
+                  LayoutMaxWidth: =0
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  X: =40
+                  Y: =40
+                Children:
+                  - btnCancel:
+                      Control: Button@0.0.45
+                      Properties:
+                        Align: =Align.Justify
+                        AlignInContainer: =AlignInContainer.End
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Layout: ='ButtonCanvas.Layout'.TextOnly
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: =If(!varIsSaving,Back());
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Text: ="Cancel"
+                        VerticalAlign: =VerticalAlign.Middle
+                  - btnSubmit:
+                      Control: Button@0.0.45
+                      Properties:
+                        Align: =Align.Justify
+                        AlignInContainer: =AlignInContainer.End
+                        DisplayMode: =If(IsEmpty(colSelectedCodes) || varIsSaving, DisplayMode.Disabled, DisplayMode.Edit)
+                        Font: =Font.'Segoe UI'
+                        FontSize: =12
+                        FontWeight: =FontWeight.Normal
+                        Icon: ="CheckmarkCircle"
+                        Layout: ='ButtonCanvas.Layout'.TextOnly
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: |+
+                          =Set(varIsSaving, true);
+                          Notify("Saving disposition codes to conversation",NotificationType.Information);
+                          ForAll(
+                              colSelectedCodes As SelectedCode,
+                              Patch(
+                                  'Conversation disposition code map',
+                                  Defaults('Conversation disposition code map'),
+                                  {
+                                      Name: SelectedCode.label,
+                                      'Disposition code value': SelectedCode.label,
+                                      'OC Disposition Code': LookUp('OC Disposition Codes', 'OC Disposition Code' = GUID(SelectedCode.dispositionId)),
+                                      'Live work item ID': LookUp(Conversations, ConversationId = varConversationId)
+                                  }
+                              )
+                          );
+                          Notify("Saved successfully",NotificationType.Success);
+                          Set(varIsSaving, false);
+                          Back();
+                        Text: ="Save"
+                        Width: =100
+                        X: =40
+                        Y: =40
+            - FooterText:
+                Control: HtmlViewer@2.1.0
+                Properties:
+                  AlignInContainer: =AlignInContainer.Stretch
+                  DisplayMode: =DisplayMode.View
+                  Font: =Font.'Segoe UI'
+                  HtmlText: |-
+                    ="<div style='display:flex; justify-content:space-between; font-size:9px; width:100%;'><span style='color:#616161;'>AI-generated content may be incorrect. Make sure AI-generated content is accurate and appropriate before using. <a href='https://go.microsoft.com/fwlink/?linkid=2189520' target='_blank' style='color:#0566B2;'>See Terms</a></span><span style='color:#888; font-style:italic;'> Recommended Codes: " & CountRows(colRecommendations) & " | Processed in " & Text(varElapsedSeconds, "0.0") & "s</span></div>"
+                  LayoutMaxHeight: =0
+                  LayoutMaxWidth: =0
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  Size: =9
+                  X: =40
+                  Y: =40
+      - LoadingContainer:
+          Control: GroupContainer@1.3.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Visible: =Coalesce(varIsLoading, true)
+            Width: =Parent.Width
+          Children:
+            - Spinner1:
+                Control: Spinner@1.4.6
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  FillPortions: =1
+                  Height: =100
+                  Label: =varLoadingMessage
+                  LabelPosition: ='Spinner.LabelPosition'.Below
+                  LayoutMaxHeight: =0
+                  LayoutMaxWidth: =0
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  SpinnerSize: ='Spinner.SpinnerSize'.ExtraSmall

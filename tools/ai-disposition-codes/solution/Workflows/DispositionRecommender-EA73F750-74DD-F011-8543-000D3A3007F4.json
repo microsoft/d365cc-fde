@@ -65,8 +65,24 @@
         }
       },
       "actions": {
-        "Initialize_summaryText": {
+        "Config": {
           "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "0b6d5f0e-4a1c-4c52-9d7e-3f1a2b9c8d01"
+          },
+          "type": "Compose",
+          "inputs": {
+            "pollMaxAttempts": 15,
+            "minConfidence": 0.4,
+            "maxRecommendations": 3
+          }
+        },
+        "Initialize_summaryText": {
+          "runAfter": {
+            "Config": [
+              "Succeeded"
+            ]
+          },
           "metadata": {
             "operationMetadataId": "c1ffe989-0495-40d6-a2ef-b8a0b8b8dc88"
           },
@@ -101,75 +117,395 @@
             ]
           }
         },
-        "Do_until_summary_found": {
+        "Initialize_result": {
+          "runAfter": {
+            "Initialize_pollCount": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5d2c7a41-8e63-4b0f-a9d4-6c0e1f7b2a02"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "result",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          }
+        },
+        "Try_recommend": {
           "actions": {
-            "Increment_pollCount": {
+            "Parse_codes": {
               "runAfter": {},
               "metadata": {
-                "operationMetadataId": "46920b79-1d25-44d5-8d35-6a1f9ad13dab"
+                "operationMetadataId": "8a1c3e5f-7b9d-4f02-a4c6-0e2a4c6e8f10"
               },
-              "type": "IncrementVariable",
+              "type": "ParseJson",
               "inputs": {
-                "name": "pollCount",
-                "value": 1
-              }
-            },
-            "List_conversation_insights": {
-              "runAfter": {
-                "Increment_pollCount": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "7da31fd3-6622-457e-91a7-65ce0d12ea59"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps",
-                  "operationId": "ListRecords",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
-                "parameters": {
-                  "entityName": "msdyn_conversationinsights",
-                  "$filter": "_msdyn_conversationid_value eq '@{triggerBody()['text']}'",
-                  "$top": 1
-                },
-                "authentication": "@parameters('$authentication')"
-              }
-            },
-            "Check_if_summary_exists": {
-              "actions": {
-                "Set_summaryText": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "9f8faf52-b840-4c6f-a555-9695416785ad"
-                  },
-                  "type": "SetVariable",
-                  "inputs": {
-                    "name": "summaryText",
-                    "value": "@{first(outputs('List_conversation_insights')?['body/value'])?['msdyn_copilotsummary']}"
+                "content": "@coalesce(triggerBody()?['text_2'],'[]')",
+                "schema": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "dispositionId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "dispositionId"
+                    ]
                   }
                 }
-              },
+              }
+            },
+            "Check_input_valid": {
               "runAfter": {
-                "List_conversation_insights": [
+                "Parse_codes": [
                   "Succeeded"
                 ]
               },
+              "actions": {
+                "Do_until_summary_found": {
+                  "actions": {
+                    "Increment_pollCount": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "46920b79-1d25-44d5-8d35-6a1f9ad13dab"
+                      },
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "pollCount",
+                        "value": 1
+                      }
+                    },
+                    "List_conversation_insights": {
+                      "runAfter": {
+                        "Increment_pollCount": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "7da31fd3-6622-457e-91a7-65ce0d12ea59"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps",
+                          "operationId": "ListRecords",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "parameters": {
+                          "entityName": "msdyn_conversationinsights",
+                          "$select": "msdyn_copilotsummary",
+                          "$filter": "_msdyn_conversationid_value eq '@{trim(triggerBody()?['text'])}'",
+                          "$orderby": "createdon desc",
+                          "$top": 1
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Check_if_summary_exists": {
+                      "actions": {
+                        "Set_summaryText": {
+                          "runAfter": {},
+                          "metadata": {
+                            "operationMetadataId": "9f8faf52-b840-4c6f-a555-9695416785ad"
+                          },
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "summaryText",
+                            "value": "@{first(outputs('List_conversation_insights')?['body/value'])?['msdyn_copilotsummary']}"
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "List_conversation_insights": [
+                          "Succeeded"
+                        ]
+                      },
+                      "else": {
+                        "actions": {
+                          "Wait_2_seconds": {
+                            "runAfter": {},
+                            "metadata": {
+                              "operationMetadataId": "85990098-c523-48c5-814c-4cb128c06adc"
+                            },
+                            "type": "Wait",
+                            "inputs": {
+                              "interval": {
+                                "count": 2,
+                                "unit": "Second"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('List_conversation_insights')?['body/value'])",
+                              0
+                            ]
+                          },
+                          {
+                            "not": {
+                              "equals": [
+                                "@empty(first(outputs('List_conversation_insights')?['body/value'])?['msdyn_copilotsummary'])",
+                                true
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "fb5c507e-651a-4f4b-bbb0-0341e6686e53"
+                      },
+                      "type": "If"
+                    }
+                  },
+                  "runAfter": {},
+                  "expression": "@or(greaterOrEquals(variables('pollCount'),outputs('Config')?['pollMaxAttempts']),not(empty(variables('summaryText'))))",
+                  "limit": {
+                    "count": 60,
+                    "timeout": "PT2M"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "fbd5cec3-37df-4106-ac17-388a9ce836fa"
+                  },
+                  "type": "Until"
+                },
+                "Check_summary_found": {
+                  "actions": {
+                    "Run_a_prompt": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "9f381383-624c-4d32-a108-e0c5ca504b87",
+                        "flowSystemMetadata": {
+                          "portalOperationId": "aibuilderpredict_customprompt",
+                          "portalOperationGroup": "aibuilder",
+                          "portalOperationApiDisplayNameOverride": "AI Builder",
+                          "portalOperationIconOverride": "https://content.powerapps.com/resource/makerx/static/pauto/images/designeroperations/aiBuilderNew.51dbdb6b.png",
+                          "portalOperationBrandColorOverride": "#0A76C4",
+                          "portalOperationApiTierOverride": "Standard"
+                        }
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps",
+                          "operationId": "aibuilderpredict_customprompt",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "parameters": {
+                          "recordId": "98737408-057e-42a8-bbcd-12134a4c64e0",
+                          "item/requestv2/Codes": "@triggerBody()['text_2']",
+                          "item/requestv2/Summary": "@variables('summaryText')"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Clean_model_output": {
+                      "runAfter": {
+                        "Run_a_prompt": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "3a9e1c70-6b52-4d18-8f04-2e7d5c1b9a03"
+                      },
+                      "type": "Compose",
+                      "inputs": "@trim(replace(replace(outputs('Run_a_prompt')?['body/responsev2/predictionOutput/text'],'```json',''),'```',''))"
+                    },
+                    "Parse_model_output": {
+                      "runAfter": {
+                        "Clean_model_output": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "7c4b2e91-1d3a-4f65-b8a0-9e6f3d2c1b04"
+                      },
+                      "type": "ParseJson",
+                      "inputs": {
+                        "content": "@outputs('Clean_model_output')",
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "recommendations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "confidence": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "reason": {}
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Valid_ids": {
+                      "runAfter": {
+                        "Parse_model_output": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "e8f1a3b5-2c4d-4e6f-9a01-5b7c9d1e3f05"
+                      },
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@body('Parse_codes')",
+                        "select": "@toLower(string(item()?['dispositionId']))"
+                      }
+                    },
+                    "Filter_valid_recommendations": {
+                      "runAfter": {
+                        "Valid_ids": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "1f3a5c7e-9b0d-4a2c-8e4f-6d8b0a2c4e06"
+                      },
+                      "type": "Query",
+                      "inputs": {
+                        "from": "@coalesce(body('Parse_model_output')?['recommendations'],json('[]'))",
+                        "where": "@and(contains(body('Valid_ids'),toLower(string(item()?['id']))),greaterOrEquals(if(empty(string(item()?['confidence'])),0,float(string(item()?['confidence']))),float(string(outputs('Config')?['minConfidence']))),lessOrEquals(if(empty(string(item()?['confidence'])),0,float(string(item()?['confidence']))),1))"
+                      }
+                    },
+                    "Build_success_response": {
+                      "runAfter": {
+                        "Filter_valid_recommendations": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "77c5a282-08a1-4c4f-9a42-339eb121d717"
+                      },
+                      "type": "Compose",
+                      "inputs": {
+                        "success": true,
+                        "summary": "@variables('summaryText')",
+                        "recommendations": "@take(reverse(sort(body('Filter_valid_recommendations'),'confidence')),outputs('Config')?['maxRecommendations'])",
+                        "error": ""
+                      }
+                    },
+                    "Set_result_success": {
+                      "runAfter": {
+                        "Build_success_response": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "a2b4c6d8-0e1f-4a3b-9c5d-7e9f1a3b5c07"
+                      },
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "result",
+                        "value": "@string(outputs('Build_success_response'))"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Do_until_summary_found": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Build_no_summary_response": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "e401c013-fa86-4ce1-b816-9a29c0bfeea4"
+                        },
+                        "type": "Compose",
+                        "inputs": {
+                          "success": false,
+                          "summary": "",
+                          "recommendations": [],
+                          "error": "No Copilot summary found after polling"
+                        }
+                      },
+                      "Set_result_no_summary": {
+                        "runAfter": {
+                          "Build_no_summary_response": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "b3c5d7e9-1f2a-4b4c-8d6e-8f0a2b4c6d08"
+                        },
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "result",
+                          "value": "@string(outputs('Build_no_summary_response'))"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "not": {
+                          "equals": [
+                            "@variables('summaryText')",
+                            ""
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "27828341-937b-4445-9129-424c139d2434"
+                  },
+                  "type": "If"
+                }
+              },
               "else": {
-                "actions": {
-                  "Wait_2_seconds": {
+              "actions": {
+                "Build_invalid_input_response": {
                     "runAfter": {},
                     "metadata": {
-                      "operationMetadataId": "85990098-c523-48c5-814c-4cb128c06adc"
+                      "operationMetadataId": "c4d6e8f0-2a3b-4c5d-9e7f-9a1b3c5d7e09"
                     },
-                    "type": "Wait",
+                    "type": "Compose",
                     "inputs": {
-                      "interval": {
-                        "count": 2,
-                        "unit": "Second"
-                      }
+                      "success": false,
+                      "summary": "",
+                      "recommendations": [],
+                      "error": "Invalid input: conversationId must be a GUID and dispositionCodes a JSON array"
+                    }
+                  },
+                  "Set_result_invalid_input": {
+                    "runAfter": {
+                      "Build_invalid_input_response": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "d5e7f9a1-3b4c-4d6e-8f08-0b2c4d6e8f0a"
+                    },
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "result",
+                      "value": "@string(outputs('Build_invalid_input_response'))"
                     }
                   }
                 }
@@ -177,120 +513,92 @@
               "expression": {
                 "and": [
                   {
-                    "greater": [
-                      "@length(outputs('List_conversation_insights')?['body/value'])",
-                      0
+                    "equals": [
+                      "@length(trim(coalesce(triggerBody()?['text'],'')))",
+                      36
+                    ]
+                  },
+                  {
+                    "not": {
+                      "contains": [
+                        "@coalesce(triggerBody()?['text'],'')",
+                        "'"
+                      ]
+                    }
+                  },
+                  {
+                    "startsWith": [
+                      "@trim(coalesce(triggerBody()?['text_2'],''))",
+                      "["
                     ]
                   }
                 ]
               },
               "metadata": {
-                "operationMetadataId": "fb5c507e-651a-4f4b-bbb0-0341e6686e53"
+                "operationMetadataId": "e6f8a0b2-4c5d-4e7f-9a19-1c3d5e7f9a0b"
               },
               "type": "If"
             }
           },
           "runAfter": {
-            "Initialize_pollCount": [
+            "Initialize_result": [
               "Succeeded"
             ]
           },
-          "expression": "@or(greaterOrEquals(variables('pollCount'),15),not(empty(variables('summaryText'))))",
-          "limit": {
-            "count": 60,
-            "timeout": "PT5M"
-          },
           "metadata": {
-            "operationMetadataId": "fbd5cec3-37df-4106-ac17-388a9ce836fa"
+            "operationMetadataId": "f7a9b1c3-5d6e-4f80-8b2a-2d4e6f8a0b1c"
           },
-          "type": "Until"
+          "type": "Scope"
         },
-        "Check_summary_found": {
+        "Catch_failure": {
           "actions": {
-            "Run_a_prompt": {
+            "Build_error_response": {
               "runAfter": {},
               "metadata": {
-                "operationMetadataId": "9f381383-624c-4d32-a108-e0c5ca504b87",
-                "flowSystemMetadata": {
-                  "portalOperationId": "aibuilderpredict_customprompt",
-                  "portalOperationGroup": "aibuilder",
-                  "portalOperationApiDisplayNameOverride": "AI Builder",
-                  "portalOperationIconOverride": "https://content.powerapps.com/resource/makerx/static/pauto/images/designeroperations/aiBuilderNew.51dbdb6b.png",
-                  "portalOperationBrandColorOverride": "#0A76C4",
-                  "portalOperationApiTierOverride": "Standard"
-                }
+                "operationMetadataId": "a8b0c2d4-6e7f-4a91-9c3b-3e5f7a9b1c2d"
               },
-              "type": "OpenApiConnection",
+              "type": "Compose",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps",
-                  "operationId": "aibuilderpredict_customprompt",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
-                "parameters": {
-                  "recordId": "98737408-057e-42a8-bbcd-12134a4c64e0",
-                  "item/requestv2/Codes": "@triggerBody()['text_2']",
-                  "item/requestv2/Summary": "@variables('summaryText')"
-                },
-                "authentication": "@parameters('$authentication')"
+                "success": false,
+                "summary": "@variables('summaryText')",
+                "recommendations": [],
+                "error": "@if(equals(actions('Parse_codes')?['status'],'Failed'),'Invalid input: conversationId must be a GUID and dispositionCodes a non-empty JSON array of objects with a dispositionId','The AI recommendation failed. Select disposition codes manually.')"
               }
             },
-            "Build_success_response": {
+            "Set_result_error": {
               "runAfter": {
-                "Run_a_prompt": [
+                "Build_error_response": [
                   "Succeeded"
                 ]
               },
               "metadata": {
-                "operationMetadataId": "77c5a282-08a1-4c4f-9a42-339eb121d717"
+                "operationMetadataId": "b9c1d3e5-7f80-4ba2-8d4c-4f6a8b0c2d3e"
               },
-              "type": "Compose",
-              "inputs": "@outputs('Run_a_prompt')?['body/responsev2/predictionOutput/text']"
+              "type": "SetVariable",
+              "inputs": {
+                "name": "result",
+                "value": "@string(outputs('Build_error_response'))"
+              }
             }
           },
           "runAfter": {
-            "Do_until_summary_found": [
-              "Succeeded"
-            ]
-          },
-          "else": {
-            "actions": {
-              "Build_no_summary_response": {
-                "runAfter": {},
-                "metadata": {
-                  "operationMetadataId": "e401c013-fa86-4ce1-b816-9a29c0bfeea4"
-                },
-                "type": "Compose",
-                "inputs": {
-                  "success": false,
-                  "summary": "",
-                  "recommendations": [],
-                  "error": "No Copilot summary found after polling"
-                }
-              }
-            }
-          },
-          "expression": {
-            "and": [
-              {
-                "not": {
-                  "equals": [
-                    "@variables('summaryText')",
-                    ""
-                  ]
-                }
-              }
+            "Try_recommend": [
+              "Failed",
+              "TimedOut"
             ]
           },
           "metadata": {
-            "operationMetadataId": "27828341-937b-4445-9129-424c139d2434"
+            "operationMetadataId": "cad2e4f6-8091-4cb3-9e5d-5a7b9c1d3e4f"
           },
-          "type": "If"
+          "type": "Scope"
         },
         "Respond_to_PowerApp": {
           "runAfter": {
-            "Check_summary_found": [
-              "Succeeded"
+            "Catch_failure": [
+              "Succeeded",
+              "Skipped",
+              "Failed",
+              "TimedOut"
             ]
           },
           "metadata": {
@@ -301,7 +609,7 @@
           "inputs": {
             "statusCode": 200,
             "body": {
-              "response": "@{if(not(empty(variables('summaryText'))),outputs('Build_success_response'),outputs('Build_no_summary_response'))}"
+              "response": "@variables('result')"
             },
             "schema": {
               "type": "object",

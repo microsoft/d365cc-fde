@@ -1,0 +1,30 @@
+name: AI Disposition Codes
+
+on:
+  pull_request:
+    paths:
+      - "tools/ai-disposition-codes/**"
+      - ".github/workflows/ai-disposition-codes.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/ai-disposition-codes/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/ai-disposition-codes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify solution and zip are in sync with src/
+        run: npm run check
+      - name: Run tests
+        run: npm test
